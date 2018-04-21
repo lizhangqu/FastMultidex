@@ -1,0 +1,46 @@
+buildscript {
+    repositories {
+        maven {
+            url 'https://dl.google.com/dl/android/maven2/'
+        }
+        jcenter()
+    }
+    dependencies {
+        File localFile = project.rootProject.file('local.properties')
+        Properties extProperties = new Properties()
+        if (localFile.exists()) {
+            extProperties.load(localFile.newDataInputStream())
+        }
+        def androidGradlePluginVersion = "2.3.3"
+        if (extProperties.containsKey('gradleVersion')) {
+            androidGradlePluginVersion = extProperties.get("gradleVersion") as String
+        }
+        if (project.hasProperty('gradleVersion')) {
+            androidGradlePluginVersion = project.getProperties().get("gradleVersion") as String
+        }
+        project.logger.error "root build.gradle androidGradlePluginVersion ${androidGradlePluginVersion}"
+
+        classpath "com.android.tools.build:gradle:${androidGradlePluginVersion}"
+    }
+    configurations.all {
+        it.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
+        it.resolutionStrategy.cacheChangingModulesFor(0, 'seconds')
+    }
+}
+
+allprojects {
+    repositories {
+        maven {
+            url 'https://dl.google.com/dl/android/maven2/'
+        }
+        jcenter()
+    }
+    configurations.all {
+        it.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
+        it.resolutionStrategy.cacheChangingModulesFor(0, 'seconds')
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
