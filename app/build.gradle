@@ -58,8 +58,6 @@ dependencies {
     compile "com.squareup.picasso:picasso:2.71828"
     compile "com.squareup.moshi:moshi:1.5.0"
     compile "com.squareup.sqlbrite3:sqlbrite:3.2.0"
-    compile "com.squareup:kotlinpoet:0.7.0"
-    compile "com.squareup:javapoet:1.10.0"
     compile "com.squareup:android-times-square:1.6.5"
     compile "com.squareup.phrase:phrase:1.1.0"
 }
