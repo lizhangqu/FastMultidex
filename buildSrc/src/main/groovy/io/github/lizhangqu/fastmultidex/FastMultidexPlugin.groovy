@@ -56,6 +56,14 @@ class FastMultidexPlugin implements Plugin<Project> {
                         DexTransform dexTransform = transformTask.transform
                         DefaultDexOptions dexOptions = dexTransform.getMetaClass().getProperty(dexTransform, 'dexOptions')
                         AndroidBuilder androidBuilder = dexTransform.getMetaClass().getProperty(dexTransform, 'androidBuilder')
+
+                        String mProjectId = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mProjectId')
+                        String mCreatedBy = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mCreatedBy')
+                        ProcessExecutor mProcessExecutor = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mProcessExecutor')
+                        JavaProcessExecutor mJavaProcessExecutor = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mJavaProcessExecutor')
+                        ErrorReporter mErrorReporter = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mErrorReporter')
+                        ILogger mLogger = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLogger')
+                        boolean mVerboseExec = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mVerboseExec')
                     }
                 }
             }
