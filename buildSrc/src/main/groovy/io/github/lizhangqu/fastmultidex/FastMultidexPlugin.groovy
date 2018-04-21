@@ -17,6 +17,8 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskCollection
 
+import java.lang.reflect.Field
+
 class FastMultidexPlugin implements Plugin<Project> {
 
     static String getAndroidGradlePluginVersionCompat() {
@@ -57,6 +59,7 @@ class FastMultidexPlugin implements Plugin<Project> {
                     ApplicationVariantData applicationVariantData = variant.getMetaClass().getProperty(variant, 'variantData')
                     GradleVariantConfiguration variantConfiguration = applicationVariantData.getVariantConfiguration()
                     List<TransformTask> transformTaskList = findTransformTaskByTransformType(project, variantConfiguration, DexTransform.class)
+
                     transformTaskList.each { TransformTask transformTask ->
                         DexTransform dexTransform = transformTask.transform
                         DefaultDexOptions dexOptions = dexTransform.getMetaClass().getProperty(dexTransform, 'dexOptions')
@@ -75,6 +78,15 @@ class FastMultidexPlugin implements Plugin<Project> {
                         fastAndroidBuilder.setTargetInfo(androidBuilder.getTargetInfo())
                         List<LibraryRequest> mLibraryRequests = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLibraryRequests')
                         fastAndroidBuilder.setLibraryRequests(mLibraryRequests)
+
+                        Field androidBuilderField = DexTransform.class.getDeclaredField("androidBuilder")
+                        androidBuilderField.setAccessible(true)
+                        Field modifiersField = Field.class.getDeclaredField("modifiers")
+                        modifiersField.setAccessible(true)
+                        modifiersField.setInt(androidBuilderField, androidBuilderField.getModifiers() & ~Modifier.FINAL)
+                        androidBuilderField.setAccessible(true)
+                        androidBuilderField.set(dexTransform, fastAndroidBuilder)
+                        modifiersField.setInt(androidBuilderField, androidBuilderField.getModifiers() & Modifier.FINAL)
                     }
                 }
             }
