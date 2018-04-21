@@ -73,7 +73,7 @@ class FastMultidexPlugin implements Plugin<Project> {
                         ILogger mLogger = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLogger')
                         boolean mVerboseExec = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mVerboseExec')
 
-                        FastMultidexAndroidBuilder fastAndroidBuilder = new FastMultidexAndroidBuilder(project, mProjectId, mCreatedBy, mProcessExecutor, mJavaProcessExecutor, mErrorReporter, mLogger, mVerboseExec)
+                        FastMultidexAndroidBuilder fastAndroidBuilder = new FastMultidexAndroidBuilder(project, androidBuilder, mProjectId, mCreatedBy, mProcessExecutor, mJavaProcessExecutor, mErrorReporter, mLogger, mVerboseExec)
                         fastAndroidBuilder.setSdkInfo(androidBuilder.getSdkInfo())
                         fastAndroidBuilder.setTargetInfo(androidBuilder.getTargetInfo())
                         List<LibraryRequest> mLibraryRequests = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLibraryRequests')

@@ -13,6 +13,10 @@ import org.gradle.api.Project;
 
 class FastMultidexAndroidBuilder extends AndroidBuilder {
     private Project project
+
+    protected AndroidBuilder androidBuilder
+
+    private JavaProcessExecutor javaProcessExecutor
     /**
      * Creates an AndroidBuilder.
      * <p>
@@ -23,9 +27,11 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
      * @param processExecutor @param javaProcessExecutor @param errorReporter @param logger the Logger
      * @param verboseExec whether external tools are launched in verbose mode
      */
-    FastMultidexAndroidBuilder(Project project, String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, ErrorReporter errorReporter, ILogger logger, boolean verboseExec) {
+    FastMultidexAndroidBuilder(Project project, AndroidBuilder androidBuilder, String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, ErrorReporter errorReporter, ILogger logger, boolean verboseExec) {
         super(projectId, createdBy, processExecutor, javaProcessExecutor, errorReporter, logger, verboseExec)
         this.project = project
+        this.androidBuilder = androidBuilder
+        this.javaProcessExecutor = javaProcessExecutor
     }
 
     @Override
