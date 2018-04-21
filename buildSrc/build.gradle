@@ -1,0 +1,46 @@
+apply plugin: 'groovy'
+apply plugin: 'java'
+
+repositories {
+    maven { url 'https://dl.google.com/dl/android/maven2/' }
+    mavenLocal()
+    jcenter()
+}
+
+dependencies {
+    compile localGroovy()
+    compile gradleApi()
+
+    File localFile = project.rootProject.file('../local.properties')
+    Properties extProperties = new Properties()
+    if (!localFile.exists()) {
+        localFile = project.rootProject.file('local.properties')
+    }
+    if (localFile.exists()) {
+        extProperties.load(localFile.newDataInputStream())
+    }
+    def androidGradlePluginVersion = "2.3.3"
+    if (extProperties.containsKey('gradleVersion')) {
+        androidGradlePluginVersion = extProperties.get("gradleVersion") as String
+    }
+    if (project.hasProperty('gradleVersion')) {
+        androidGradlePluginVersion = project.getProperties().get("gradleVersion") as String
+    }
+    project.logger.error "buildSrc build.gradle androidGradlePluginVersion ${androidGradlePluginVersion}"
+
+    compile "com.android.tools.build:gradle:${androidGradlePluginVersion}"
+
+}
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+    }
+    configurations.all {
+        it.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
+        it.resolutionStrategy.cacheChangingModulesFor(0, 'seconds')
+    }
+}
+
