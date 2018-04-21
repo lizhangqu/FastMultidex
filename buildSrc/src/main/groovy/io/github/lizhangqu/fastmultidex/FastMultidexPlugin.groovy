@@ -3,7 +3,10 @@ package io.github.lizhangqu.fastmultidex
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.pipeline.TransformTask
+import com.android.build.gradle.internal.transforms.DexTransform
 import com.android.build.gradle.internal.variant.ApplicationVariantData
+import com.android.builder.core.AndroidBuilder
+import com.android.builder.core.DefaultDexOptions
 import com.android.builder.core.VariantConfiguration
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -49,6 +52,11 @@ class FastMultidexPlugin implements Plugin<Project> {
                     ApplicationVariantData applicationVariantData = variant.getMetaClass().getProperty(variant, 'variantData')
                     GradleVariantConfiguration variantConfiguration = applicationVariantData.getVariantConfiguration()
                     List<TransformTask> transformTaskList = findTransformTaskByTransformType(project, variantConfiguration, DexTransform.class)
+                    transformTaskList.each { TransformTask transformTask ->
+                        DexTransform dexTransform = transformTask.transform
+                        DefaultDexOptions dexOptions = dexTransform.getMetaClass().getProperty(dexTransform, 'dexOptions')
+                        AndroidBuilder androidBuilder = dexTransform.getMetaClass().getProperty(dexTransform, 'androidBuilder')
+                    }
                 }
             }
         }
