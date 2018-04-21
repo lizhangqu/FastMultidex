@@ -40,10 +40,16 @@ dependencies {
     compile "android.arch.lifecycle:livedata:1.1.1"
 
     compile "com.squareup.okhttp3:okhttp:3.10.0"
+    compile "com.squareup.retrofit2:retrofit:2.4.0"
     compile "com.alibaba:fastjson:1.1.68.android"
     compile "com.google.code.gson:gson:2.8.2"
     compile "com.fasterxml.jackson.core:jackson-databind:2.9.1"
     compile "io.reactivex.rxjava2:rxjava:2.1.12"
     compile "com.facebook.fresco:fresco:1.9.0"
     compile "com.github.bumptech.glide:glide:4.7.1"
+    compile "com.meituan.android.walle:library:1.1.6"
+    compile "com.tencent.tinker:tinker-android-lib:1.9.1"
+    compile "com.taobao.android:weex_inspector:0.13.4"
+    compile "com.taobao.android:atlas_core:5.0.7.52"
+    compile "com.taobao.android:atlasupdate:1.1.4.5"
 }
