@@ -1,6 +1,9 @@
 package io.github.lizhangqu.fastmultidex
 
+import com.android.build.gradle.AppExtension
+import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.pipeline.TransformTask
+import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.builder.core.VariantConfiguration
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -38,7 +41,17 @@ class FastMultidexPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
+        String androidGradlePluginVersionCompat = getAndroidGradlePluginVersionCompat()
+        if (androidGradlePluginVersionCompat.startsWith("2.")) {
+            project.afterEvaluate {
+                AppExtension appExtension = project.getExtensions().findByType(AppExtension.class)
+                appExtension.applicationVariants.all { def variant ->
+                    ApplicationVariantData applicationVariantData = variant.getMetaClass().getProperty(variant, 'variantData')
+                    GradleVariantConfiguration variantConfiguration = applicationVariantData.getVariantConfiguration()
+                    List<TransformTask> transformTaskList = findTransformTaskByTransformType(project, variantConfiguration, DexTransform.class)
+                }
+            }
+        }
 
     }
-
 }
