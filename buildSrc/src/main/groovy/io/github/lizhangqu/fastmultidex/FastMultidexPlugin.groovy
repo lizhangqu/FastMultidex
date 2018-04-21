@@ -7,7 +7,12 @@ import com.android.build.gradle.internal.transforms.DexTransform
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DefaultDexOptions
+import com.android.builder.core.ErrorReporter
+import com.android.builder.core.LibraryRequest
 import com.android.builder.core.VariantConfiguration
+import com.android.ide.common.process.JavaProcessExecutor
+import com.android.ide.common.process.ProcessExecutor
+import com.android.utils.ILogger
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskCollection
@@ -64,6 +69,12 @@ class FastMultidexPlugin implements Plugin<Project> {
                         ErrorReporter mErrorReporter = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mErrorReporter')
                         ILogger mLogger = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLogger')
                         boolean mVerboseExec = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mVerboseExec')
+
+                        FastMultidexAndroidBuilder fastAndroidBuilder = new FastMultidexAndroidBuilder(project, mProjectId, mCreatedBy, mProcessExecutor, mJavaProcessExecutor, mErrorReporter, mLogger, mVerboseExec)
+                        fastAndroidBuilder.setSdkInfo(androidBuilder.getSdkInfo())
+                        fastAndroidBuilder.setTargetInfo(androidBuilder.getTargetInfo())
+                        List<LibraryRequest> mLibraryRequests = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLibraryRequests')
+                        fastAndroidBuilder.setLibraryRequests(mLibraryRequests)
                     }
                 }
             }
