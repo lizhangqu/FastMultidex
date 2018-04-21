@@ -18,6 +18,7 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.TaskCollection
 
 import java.lang.reflect.Field
+import java.lang.reflect.Modifier
 
 class FastMultidexPlugin implements Plugin<Project> {
 
