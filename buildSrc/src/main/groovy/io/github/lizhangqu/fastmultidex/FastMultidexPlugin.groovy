@@ -1,15 +1,20 @@
 package io.github.lizhangqu.fastmultidex
 
+import com.android.annotations.NonNull
+import com.android.annotations.Nullable
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.build.gradle.internal.incremental.InstantRunBuildContext
 import com.android.build.gradle.internal.pipeline.TransformTask
 import com.android.build.gradle.internal.transforms.DexTransform
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DefaultDexOptions
+import com.android.builder.core.DexOptions
 import com.android.builder.core.ErrorReporter
 import com.android.builder.core.LibraryRequest
 import com.android.builder.core.VariantConfiguration
+import com.android.builder.utils.FileCache
 import com.android.ide.common.process.JavaProcessExecutor
 import com.android.ide.common.process.ProcessExecutor
 import com.android.utils.ILogger
@@ -64,7 +69,13 @@ class FastMultidexPlugin implements Plugin<Project> {
                     transformTaskList.each { TransformTask transformTask ->
                         DexTransform dexTransform = transformTask.transform
                         DefaultDexOptions dexOptions = dexTransform.getMetaClass().getProperty(dexTransform, 'dexOptions')
+                        boolean debugMode = dexTransform.getMetaClass().getProperty(dexTransform, 'debugMode')
+                        boolean multiDex = dexTransform.getMetaClass().getProperty(dexTransform, 'multiDex')
+                        File mainDexListFile = dexTransform.getMetaClass().getProperty(dexTransform, 'mainDexListFile')
+                        File intermediateFolder = dexTransform.getMetaClass().getProperty(dexTransform, 'intermediateFolder')
                         AndroidBuilder androidBuilder = dexTransform.getMetaClass().getProperty(dexTransform, 'androidBuilder')
+                        InstantRunBuildContext instantRunBuildContext = dexTransform.getMetaClass().getProperty(dexTransform, 'instantRunBuildContext')
+                        Optional<FileCache> buildCache = dexTransform.getMetaClass().getProperty(dexTransform, 'buildCache')
 
                         String mProjectId = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mProjectId')
                         String mCreatedBy = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mCreatedBy')
@@ -88,6 +99,19 @@ class FastMultidexPlugin implements Plugin<Project> {
                         androidBuilderField.setAccessible(true)
                         androidBuilderField.set(dexTransform, fastAndroidBuilder)
                         modifiersField.setInt(androidBuilderField, androidBuilderField.getModifiers() & Modifier.FINAL)
+
+                        DexTransform newDexTransform = new DexTransform(dexOptions,
+                                debugMode,
+                                false,
+                                null,
+                                intermediateFolder,
+                                fastAndroidBuilder,
+                                project.getLogger(),
+                                instantRunBuildContext,
+                                buildCache)
+                        Field transformField = TransformTask.class.getDeclaredField("transform")
+                        transformField.setAccessible(true)
+                        transformField.set(transformTask, newDexTransform)
                     }
                 }
             }
