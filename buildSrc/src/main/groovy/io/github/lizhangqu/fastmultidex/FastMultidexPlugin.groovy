@@ -61,13 +61,16 @@ class FastMultidexPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         String androidGradlePluginVersionCompat = getAndroidGradlePluginVersionCompat()
+        //only 2.+ should do it. 3.+ don't need it
         if (androidGradlePluginVersionCompat.startsWith("2.")) {
             project.afterEvaluate {
                 AppExtension appExtension = project.getExtensions().findByType(AppExtension.class)
                 appExtension.applicationVariants.all { def variant ->
+                    //get ApplicationVariantData and GradleVariantConfiguration
                     ApplicationVariantData applicationVariantData = variant.getMetaClass().getProperty(variant, 'variantData')
                     GradleVariantConfiguration variantConfiguration = applicationVariantData.getVariantConfiguration()
                     String fullName = variantConfiguration.getFullName()
+                    //only debug build enable it
                     if (fullName.toLowerCase().contains("debug")) {
                         BuildType buildType = variantConfiguration.getBuildType()
                         ProductFlavor productFlavor = variantConfiguration.getMergedFlavor()
@@ -87,12 +90,17 @@ class FastMultidexPlugin implements Plugin<Project> {
                                     "}")
                         }
 
+                        //find dex transform task wrapper
                         List<TransformTask> transformTaskList = findTransformTaskByTransformType(project, variantConfiguration, DexTransform.class)
-
                         transformTaskList.each { TransformTask transformTask ->
+                            //get dex transform
                             DexTransform dexTransform = transformTask.transform
+
+                            //get dex options
                             DefaultDexOptions dexOptions = dexTransform.getMetaClass().getProperty(dexTransform, 'dexOptions')
                             dexOptions.setPreDexLibraries(false)
+
+                            //get dex transform original filed
                             boolean debugMode = dexTransform.getMetaClass().getProperty(dexTransform, 'debugMode')
                             boolean multiDex = dexTransform.getMetaClass().getProperty(dexTransform, 'multiDex')
                             File mainDexListFile = dexTransform.getMetaClass().getProperty(dexTransform, 'mainDexListFile')
@@ -101,6 +109,7 @@ class FastMultidexPlugin implements Plugin<Project> {
                             InstantRunBuildContext instantRunBuildContext = dexTransform.getMetaClass().getProperty(dexTransform, 'instantRunBuildContext')
                             Optional<FileCache> buildCache = dexTransform.getMetaClass().getProperty(dexTransform, 'buildCache')
 
+                            //get android builder original field
                             String mProjectId = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mProjectId')
                             String mCreatedBy = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mCreatedBy')
                             ProcessExecutor mProcessExecutor = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mProcessExecutor')
@@ -109,12 +118,14 @@ class FastMultidexPlugin implements Plugin<Project> {
                             ILogger mLogger = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLogger')
                             boolean mVerboseExec = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mVerboseExec')
 
+                            //create new android builder
                             FastMultidexAndroidBuilder fastAndroidBuilder = new FastMultidexAndroidBuilder(project, androidBuilder, mProjectId, mCreatedBy, mProcessExecutor, mJavaProcessExecutor, mErrorReporter, mLogger, mVerboseExec)
                             fastAndroidBuilder.setSdkInfo(androidBuilder.getSdkInfo())
                             fastAndroidBuilder.setTargetInfo(androidBuilder.getTargetInfo())
                             List<LibraryRequest> mLibraryRequests = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLibraryRequests')
                             fastAndroidBuilder.setLibraryRequests(mLibraryRequests)
 
+                            //replace android builder in original dex transform
                             Field androidBuilderField = DexTransform.class.getDeclaredField("androidBuilder")
                             androidBuilderField.setAccessible(true)
                             Field modifiersField = Field.class.getDeclaredField("modifiers")
@@ -124,6 +135,7 @@ class FastMultidexPlugin implements Plugin<Project> {
                             androidBuilderField.set(dexTransform, fastAndroidBuilder)
                             modifiersField.setInt(androidBuilderField, androidBuilderField.getModifiers() & Modifier.FINAL)
 
+                            //create new dex transform
                             DexTransform newDexTransform = new DexTransform(dexOptions,
                                     debugMode,
                                     false,
@@ -133,6 +145,8 @@ class FastMultidexPlugin implements Plugin<Project> {
                                     project.getLogger(),
                                     instantRunBuildContext,
                                     buildCache)
+
+                            //replace dex transform to new dex transform
                             Field transformField = TransformTask.class.getDeclaredField("transform")
                             transformField.setAccessible(true)
                             transformField.set(transformTask, newDexTransform)
