@@ -64,58 +64,61 @@ class FastMultidexPlugin implements Plugin<Project> {
                 appExtension.applicationVariants.all { def variant ->
                     ApplicationVariantData applicationVariantData = variant.getMetaClass().getProperty(variant, 'variantData')
                     GradleVariantConfiguration variantConfiguration = applicationVariantData.getVariantConfiguration()
-                    List<TransformTask> transformTaskList = findTransformTaskByTransformType(project, variantConfiguration, DexTransform.class)
+                    String fullName = variantConfiguration.getFullName()
+                    if (fullName.toLowerCase().contains("debug")) {
+                        List<TransformTask> transformTaskList = findTransformTaskByTransformType(project, variantConfiguration, DexTransform.class)
 
-                    transformTaskList.each { TransformTask transformTask ->
-                        DexTransform dexTransform = transformTask.transform
-                        DefaultDexOptions dexOptions = dexTransform.getMetaClass().getProperty(dexTransform, 'dexOptions')
-                        boolean debugMode = dexTransform.getMetaClass().getProperty(dexTransform, 'debugMode')
-                        boolean multiDex = dexTransform.getMetaClass().getProperty(dexTransform, 'multiDex')
-                        File mainDexListFile = dexTransform.getMetaClass().getProperty(dexTransform, 'mainDexListFile')
-                        File intermediateFolder = dexTransform.getMetaClass().getProperty(dexTransform, 'intermediateFolder')
-                        AndroidBuilder androidBuilder = dexTransform.getMetaClass().getProperty(dexTransform, 'androidBuilder')
-                        InstantRunBuildContext instantRunBuildContext = dexTransform.getMetaClass().getProperty(dexTransform, 'instantRunBuildContext')
-                        Optional<FileCache> buildCache = dexTransform.getMetaClass().getProperty(dexTransform, 'buildCache')
+                        transformTaskList.each { TransformTask transformTask ->
+                            DexTransform dexTransform = transformTask.transform
+                            DefaultDexOptions dexOptions = dexTransform.getMetaClass().getProperty(dexTransform, 'dexOptions')
+                            dexOptions.setPreDexLibraries(false)
+                            boolean debugMode = dexTransform.getMetaClass().getProperty(dexTransform, 'debugMode')
+                            boolean multiDex = dexTransform.getMetaClass().getProperty(dexTransform, 'multiDex')
+                            File mainDexListFile = dexTransform.getMetaClass().getProperty(dexTransform, 'mainDexListFile')
+                            File intermediateFolder = dexTransform.getMetaClass().getProperty(dexTransform, 'intermediateFolder')
+                            AndroidBuilder androidBuilder = dexTransform.getMetaClass().getProperty(dexTransform, 'androidBuilder')
+                            InstantRunBuildContext instantRunBuildContext = dexTransform.getMetaClass().getProperty(dexTransform, 'instantRunBuildContext')
+                            Optional<FileCache> buildCache = dexTransform.getMetaClass().getProperty(dexTransform, 'buildCache')
 
-                        String mProjectId = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mProjectId')
-                        String mCreatedBy = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mCreatedBy')
-                        ProcessExecutor mProcessExecutor = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mProcessExecutor')
-                        JavaProcessExecutor mJavaProcessExecutor = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mJavaProcessExecutor')
-                        ErrorReporter mErrorReporter = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mErrorReporter')
-                        ILogger mLogger = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLogger')
-                        boolean mVerboseExec = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mVerboseExec')
+                            String mProjectId = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mProjectId')
+                            String mCreatedBy = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mCreatedBy')
+                            ProcessExecutor mProcessExecutor = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mProcessExecutor')
+                            JavaProcessExecutor mJavaProcessExecutor = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mJavaProcessExecutor')
+                            ErrorReporter mErrorReporter = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mErrorReporter')
+                            ILogger mLogger = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLogger')
+                            boolean mVerboseExec = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mVerboseExec')
 
-                        FastMultidexAndroidBuilder fastAndroidBuilder = new FastMultidexAndroidBuilder(project, androidBuilder, mProjectId, mCreatedBy, mProcessExecutor, mJavaProcessExecutor, mErrorReporter, mLogger, mVerboseExec)
-                        fastAndroidBuilder.setSdkInfo(androidBuilder.getSdkInfo())
-                        fastAndroidBuilder.setTargetInfo(androidBuilder.getTargetInfo())
-                        List<LibraryRequest> mLibraryRequests = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLibraryRequests')
-                        fastAndroidBuilder.setLibraryRequests(mLibraryRequests)
+                            FastMultidexAndroidBuilder fastAndroidBuilder = new FastMultidexAndroidBuilder(project, androidBuilder, mProjectId, mCreatedBy, mProcessExecutor, mJavaProcessExecutor, mErrorReporter, mLogger, mVerboseExec)
+                            fastAndroidBuilder.setSdkInfo(androidBuilder.getSdkInfo())
+                            fastAndroidBuilder.setTargetInfo(androidBuilder.getTargetInfo())
+                            List<LibraryRequest> mLibraryRequests = androidBuilder.getMetaClass().getProperty(androidBuilder, 'mLibraryRequests')
+                            fastAndroidBuilder.setLibraryRequests(mLibraryRequests)
 
-                        Field androidBuilderField = DexTransform.class.getDeclaredField("androidBuilder")
-                        androidBuilderField.setAccessible(true)
-                        Field modifiersField = Field.class.getDeclaredField("modifiers")
-                        modifiersField.setAccessible(true)
-                        modifiersField.setInt(androidBuilderField, androidBuilderField.getModifiers() & ~Modifier.FINAL)
-                        androidBuilderField.setAccessible(true)
-                        androidBuilderField.set(dexTransform, fastAndroidBuilder)
-                        modifiersField.setInt(androidBuilderField, androidBuilderField.getModifiers() & Modifier.FINAL)
+                            Field androidBuilderField = DexTransform.class.getDeclaredField("androidBuilder")
+                            androidBuilderField.setAccessible(true)
+                            Field modifiersField = Field.class.getDeclaredField("modifiers")
+                            modifiersField.setAccessible(true)
+                            modifiersField.setInt(androidBuilderField, androidBuilderField.getModifiers() & ~Modifier.FINAL)
+                            androidBuilderField.setAccessible(true)
+                            androidBuilderField.set(dexTransform, fastAndroidBuilder)
+                            modifiersField.setInt(androidBuilderField, androidBuilderField.getModifiers() & Modifier.FINAL)
 
-                        DexTransform newDexTransform = new DexTransform(dexOptions,
-                                debugMode,
-                                false,
-                                null,
-                                intermediateFolder,
-                                fastAndroidBuilder,
-                                project.getLogger(),
-                                instantRunBuildContext,
-                                buildCache)
-                        Field transformField = TransformTask.class.getDeclaredField("transform")
-                        transformField.setAccessible(true)
-                        transformField.set(transformTask, newDexTransform)
+                            DexTransform newDexTransform = new DexTransform(dexOptions,
+                                    debugMode,
+                                    false,
+                                    null,
+                                    intermediateFolder,
+                                    fastAndroidBuilder,
+                                    project.getLogger(),
+                                    instantRunBuildContext,
+                                    buildCache)
+                            Field transformField = TransformTask.class.getDeclaredField("transform")
+                            transformField.setAccessible(true)
+                            transformField.set(transformTask, newDexTransform)
+                        }
                     }
                 }
             }
         }
-
     }
 }
