@@ -14,10 +14,13 @@ import com.android.builder.core.DexOptions
 import com.android.builder.core.ErrorReporter
 import com.android.builder.core.LibraryRequest
 import com.android.builder.core.VariantConfiguration
+import com.android.builder.model.BuildType
+import com.android.builder.model.ProductFlavor
 import com.android.builder.utils.FileCache
 import com.android.ide.common.process.JavaProcessExecutor
 import com.android.ide.common.process.ProcessExecutor
 import com.android.utils.ILogger
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskCollection
@@ -66,6 +69,24 @@ class FastMultidexPlugin implements Plugin<Project> {
                     GradleVariantConfiguration variantConfiguration = applicationVariantData.getVariantConfiguration()
                     String fullName = variantConfiguration.getFullName()
                     if (fullName.toLowerCase().contains("debug")) {
+                        BuildType buildType = variantConfiguration.getBuildType()
+                        ProductFlavor productFlavor = variantConfiguration.getMergedFlavor()
+                        if (buildType.getMultiDexEnabled() || productFlavor.getMultiDexEnabled()) {
+                            throw new GradleException("You must disable multidex in build.gradle when use fast multidex. Like this config:\n\n" +
+                                    "defaultConfig {\n" +
+                                    "    multiDexEnabled false\n" +
+                                    "}\n" +
+                                    "\n" +
+                                    "buildTypes {\n" +
+                                    "    debug {\n" +
+                                    "        multiDexEnabled false\n" +
+                                    "    }\n" +
+                                    "    release {\n" +
+                                    "        multiDexEnabled true\n" +
+                                    "    }\n" +
+                                    "}")
+                        }
+
                         List<TransformTask> transformTaskList = findTransformTaskByTransformType(project, variantConfiguration, DexTransform.class)
 
                         transformTaskList.each { TransformTask transformTask ->
