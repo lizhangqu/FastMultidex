@@ -1,5 +1,6 @@
 package io.github.lizhangqu.fastmultidex
 
+import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DexByteCodeConverter
 import com.android.builder.core.DexOptions
@@ -13,8 +14,8 @@ import org.gradle.api.Project;
 
 class FastMultidexAndroidBuilder extends AndroidBuilder {
     private Project project
-
-    protected AndroidBuilder androidBuilder
+    private ApplicationVariantData applicationVariantData
+    private AndroidBuilder androidBuilder
 
     private JavaProcessExecutor javaProcessExecutor
     /**
@@ -27,9 +28,10 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
      * @param processExecutor @param javaProcessExecutor @param errorReporter @param logger the Logger
      * @param verboseExec whether external tools are launched in verbose mode
      */
-    FastMultidexAndroidBuilder(Project project, AndroidBuilder androidBuilder, String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, ErrorReporter errorReporter, ILogger logger, boolean verboseExec) {
+    FastMultidexAndroidBuilder(Project project, ApplicationVariantData applicationVariantData, AndroidBuilder androidBuilder, String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, ErrorReporter errorReporter, ILogger logger, boolean verboseExec) {
         super(projectId, createdBy, processExecutor, javaProcessExecutor, errorReporter, logger, verboseExec)
         this.project = project
+        this.applicationVariantData = applicationVariantData
         this.androidBuilder = androidBuilder
         this.javaProcessExecutor = javaProcessExecutor
     }
