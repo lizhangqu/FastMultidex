@@ -16,13 +16,19 @@ import javassist.ClassPool
 import javassist.CtClass
 import javassist.NotFoundException
 import org.apache.commons.io.FileUtils
+import org.apache.commons.io.IOUtils
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.util.GFileUtils
 import org.xml.sax.InputSource
 
 import javax.xml.xpath.XPath
-import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathExpressionException
+import java.security.MessageDigest
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
+import java.util.jar.JarOutputStream
+import java.util.zip.ZipEntry;
 
 class FastMultidexAndroidBuilder extends AndroidBuilder {
     private Project project
@@ -101,9 +107,97 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
                 jars.add(mergedJar)
             }
         }
-        return null
+
+        List<File> result = new ArrayList<>()
+        File mainDexJar = new File(repackageDir, "repackage/mainDex.jar")
+        GFileUtils.deleteQuietly(mainDexJar)
+        GFileUtils.touch(mainDexJar)
+        JarOutputStream mainDexJarOutputStream = new JarOutputStream(
+                new BufferedOutputStream(new FileOutputStream(mainDexJar)));
+
+        jars.each { File jarFile ->
+            //calculate dest file
+            MessageDigest md5 = MessageDigest.getInstance("MD5")
+            md5.update(jarFile.getAbsolutePath().getBytes("UTF-8"))
+            BigInteger bi = new BigInteger(1, md5.digest())
+            String md5Value = String.format("%032x", bi).toLowerCase()
+            File destFile = new File(repackageDir, "repackage/${jarFile.getName()}_${md5Value}.jar")
+
+            //add
+            result.add(destFile)
+
+            JarOutputStream destJarOutputStream = new JarOutputStream(new BufferedOutputStream(new FileOutputStream(destFile)))
+            JarFile sourceJarFile = new JarFile(jarFile)
+
+            //copy to main dex jar
+            List<String> addedMainDexList = new ArrayList<>();
+            sourceJarFile.entries().each { JarEntry jarEntry ->
+                String pathName = jarEntry.getName()
+                if (mainDexList.contains(pathName)) {
+                    copyStream(sourceJarFile.getInputStream(jarEntry), mainDexJarOutputStream, jarEntry, pathName)
+                    addedMainDexList.add(pathName)
+                }
+            }
+
+            //copy to dest jar
+            if (!addedMainDexList.isEmpty()) {
+                sourceJarFile.entries().each { JarEntry jarEntry ->
+                    String pathName = jarEntry.getName()
+                    if (!addedMainDexList.contains(pathName)) {
+                        copyStream(sourceJarFile.getInputStream(jarEntry), destJarOutputStream, jarEntry, pathName);
+                    }
+                }
+            }
+
+            //close
+            try {
+                sourceJarFile.close()
+            } catch (Exception e) {
+            }
+            try {
+                destJarOutputStream.close()
+            } catch (Exception e) {
+            }
+
+            //if not copy to main dex jar, then copy single file to dest
+            if (addedMainDexList.isEmpty()) {
+                GFileUtils.copyFile(jarFile, destFile)
+            }
+        }
+
+        //close
+        try {
+            mainDexJarOutputStream.close()
+        } catch (Exception e) {
+        }
+
+        //add
+        result.add(0, mainDexJar);
+        return result
     }
 
+    @SuppressWarnings("GrMethodMayBeStatic")
+    void copyStream(InputStream inputStream, JarOutputStream jos, JarEntry ze, String pathName) {
+        try {
+            ZipEntry newEntry = new ZipEntry(pathName)
+            if (ze.getTime() != -1) {
+                newEntry.setTime(ze.getTime())
+                newEntry.setCrc(ze.getCrc())
+            }
+            jos.putNextEntry(newEntry);
+            IOUtils.copy(inputStream, jos)
+        } catch (Exception e) {
+            e.printStackTrace()
+        } finally {
+            try {
+                inputStream.close()
+            } catch (Exception e) {
+
+            }
+        }
+    }
+
+    @SuppressWarnings("GrMethodMayBeStatic")
     String getApplicationName(File manifestFile) {
         XPath xpath = AndroidXPathFactory.newXPath()
         try {
@@ -141,7 +235,6 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             addRefClazz(classPool, it, mainDexList, "");
         }
 
-        //get manifest
         List<String> mainDexListClass = new ArrayList<String>()
         mainDexList.each {
             mainDexListClass.add(it.replaceAll("\\.", "/") + ".class")
