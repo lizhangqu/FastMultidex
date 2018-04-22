@@ -62,47 +62,4 @@ class ExecutorServicesHelper {
             throw new GradleException(exception.getMessage(), exception)
         }
     }
-
-    public <T> void execute(BlockingQueue<T> blockingQueue,
-                            Handler<T> handler) throws InterruptedException {
-
-        if (blockingQueue == null || blockingQueue.isEmpty()) {
-            return
-        }
-
-        if (null == this.executorService) {
-            this.executorService = Executors.newFixedThreadPool(threadCount)
-        }
-
-        final CountDownLatch countDownLatch = new CountDownLatch(this.threadCount)
-
-        for (int i = 0; i < this.threadCount; i++) {
-            this.executorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        while (true) {
-                            T t = blockingQueue.poll()
-                            if (null == t) {
-                                break;
-                            }
-                            handler.handle(t)
-                        }
-                    } catch (GradleException gradleException) {
-                        exception = gradleException
-                    } finally {
-                        countDownLatch.countDown()
-                    }
-                }
-            })
-        }
-        countDownLatch.await()
-        if (exception != null) {
-            throw new GradleException(exception.getMessage(), exception)
-        }
-    }
-
-    public static interface Handler<T> {
-        public void handle(T t)
-    }
 }
