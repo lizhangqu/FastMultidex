@@ -30,6 +30,9 @@ dependencies {
 
     compile "com.android.tools.build:gradle:${androidGradlePluginVersion}"
 
+    compile 'org.javassist:javassist:3.22.0-GA'
+    compile "commons-io:commons-io:2.6"
+
 }
 
 buildscript {
