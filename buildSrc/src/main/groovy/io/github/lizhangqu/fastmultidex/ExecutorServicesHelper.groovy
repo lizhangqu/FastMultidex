@@ -45,13 +45,10 @@ class ExecutorServicesHelper {
             void accept(Runnable runnable) {
                 try {
                     if (exception == null) {
-                        project.logger.error("execute " +
-                                name +
-                                " task at " +
-                                index.incrementAndGet() +
-                                "/" +
-                                runnableList.size())
+                        long start = System.currentTimeMillis()
                         runnable.run()
+                        long end = System.currentTimeMillis()
+                        project.logger.error("execute ${name} task at ${index.incrementAndGet()}/${runnableList.size()} spend ${(end - start)} ms")
                     }
                 } catch (Throwable gradleException) {
                     exception = gradleException
