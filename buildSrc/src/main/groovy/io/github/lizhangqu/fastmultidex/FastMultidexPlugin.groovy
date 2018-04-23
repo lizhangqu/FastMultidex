@@ -63,6 +63,7 @@ class FastMultidexPlugin implements Plugin<Project> {
         String androidGradlePluginVersionCompat = getAndroidGradlePluginVersionCompat()
         //only 2.+ should do it. 3.+ don't need it
         if (androidGradlePluginVersionCompat.startsWith("2.")) {
+            project.getDependencies().add("compile", "com.android.support:multidex:1.0.1");
             project.afterEvaluate {
                 AppExtension appExtension = project.getExtensions().findByType(AppExtension.class)
                 appExtension.applicationVariants.all { def variant ->
