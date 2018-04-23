@@ -1,7 +1,5 @@
 package io.github.lizhangqu.fastmultidex
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.incremental.InstantRunBuildContext
@@ -10,7 +8,6 @@ import com.android.build.gradle.internal.transforms.DexTransform
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DefaultDexOptions
-import com.android.builder.core.DexOptions
 import com.android.builder.core.ErrorReporter
 import com.android.builder.core.LibraryRequest
 import com.android.builder.core.VariantConfiguration

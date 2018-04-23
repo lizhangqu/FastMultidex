@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
-import java.util.zip.ZipEntry;
+import java.util.zip.ZipEntry
 
 class FastMultidexAndroidBuilder extends AndroidBuilder {
     private Project project
