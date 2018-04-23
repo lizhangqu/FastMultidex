@@ -25,6 +25,7 @@ import org.xml.sax.InputSource
 import javax.xml.xpath.XPath
 import javax.xml.xpath.XPathExpressionException
 import java.security.MessageDigest
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.jar.JarEntry
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
@@ -55,7 +56,10 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
     }
 
     @Override
-    void convertByteCode(Collection<File> inputs, File outDexFolder, boolean multidex, File mainDexList, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) throws IOException, InterruptedException, ProcessException {
+    void convertByteCode(Collection<File> inputs, File outDexFolder,
+                         final boolean multidex, File mainDexList,
+                         final DexOptions dexOptions,
+                         final ProcessOutputHandler processOutputHandler) throws IOException, InterruptedException, ProcessException {
         project.logger.error("=======convertByteCode start======");
         inputs.each {
             project.logger.error("inputs ${it}")
@@ -72,6 +76,62 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         Profiler.enter("repackage")
         Collection<File> repackageInputs = repackage(inputs)
         Profiler.release()
+
+        Profiler.enter("jar2dex")
+        Collection<File> jar2DexFiles = jar2dex(repackageInputs, multidex, dexOptions, processOutputHandler)
+        Profiler.release()
+        AtomicInteger atomicInteger = new AtomicInteger()
+        jar2DexFiles.each { File dexDir ->
+            File[] dexFiles = dexDir.listFiles(new FilenameFilter() {
+                @Override
+                boolean accept(File dir, String name) {
+                    return name.endsWith(".dex")
+                }
+            })
+            if (dexDir.getName().startsWith("mainDex")) {
+                dexFiles.each {
+                    GFileUtils.copyFile(it, new File(outDexFolder, "classes.dex"))
+                    atomicInteger.incrementAndGet()
+                }
+            } else {
+                dexFiles.each {
+                    GFileUtils.copyFile(it, new File(outDexFolder, "classes${atomicInteger.incrementAndGet()}.dex"))
+                }
+            }
+        }
+    }
+
+    private Collection<File> jar2dex(Collection<File> repackageInputs, boolean multidex, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) {
+        File intermediatesDir = this.applicationVariantData.getScope().getGlobalScope().getIntermediatesDir()
+        File tmpDir = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/jar2dex")
+        GFileUtils.mkdirs(tmpDir)
+        List<File> outputs = new ArrayList<>()
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(project, "jar2dex",
+                repackageInputs.size() > 8 ? 8
+                        : repackageInputs.size());
+
+        List<Runnable> runnableArrayList = new ArrayList<>()
+        repackageInputs.each {
+            final File dexDir = getDexOutputDir(it, tmpDir, outputs);
+            GFileUtils.mkdirs(dexDir)
+            runnableArrayList.add(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        preDexLibrary(it, dexDir, multidex, dexOptions, processOutputHandler)
+                    } catch (Exception e) {
+                        throw new GradleException(e.getMessage(), e)
+                    }
+                }
+            })
+            outputs.add(dexDir)
+        }
+        executorServicesHelper.execute(runnableArrayList)
+        return outputs
+    }
+
+    private File getDexOutputDir(File input, File rootDir, List<File> outputs) {
+        return new File(rootDir, input.getName() - ".jar")
     }
 
     Collection<File> repackage(Collection<File> inputs) throws IOException {
@@ -121,7 +181,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             md5.update(jarFile.getAbsolutePath().getBytes("UTF-8"))
             BigInteger bi = new BigInteger(1, md5.digest())
             String md5Value = String.format("%032x", bi).toLowerCase()
-            File destFile = new File(repackageDir, "repackage/${jarFile.getName()}_${md5Value}.jar")
+            File destFile = new File(repackageDir, "repackage/${jarFile.getName() - ".jar"}_${md5Value}.jar")
 
             //add
             result.add(destFile)
@@ -274,13 +334,12 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
     }
 
-
-    @Override
-    DexByteCodeConverter getDexByteCodeConverter() {
-        project.logger.error("=======getDexByteCodeConverter start======");
-        def converter = super.getDexByteCodeConverter();
-        project.logger.error("converter ${converter}")
-        project.logger.error("=======getDexByteCodeConverter end======");
-        return converter
-    }
+//    @Override
+//    DexByteCodeConverter getDexByteCodeConverter() {
+//        project.logger.error("=======getDexByteCodeConverter start======");
+//        def converter = super.getDexByteCodeConverter();
+//        project.logger.error("converter ${converter}")
+//        project.logger.error("=======getDexByteCodeConverter end======");
+//        return converter
+//    }
 }
