@@ -54,16 +54,16 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
                          final boolean multidex, File mainDexList,
                          final DexOptions dexOptions,
                          final ProcessOutputHandler processOutputHandler) throws IOException, InterruptedException, ProcessException {
-        project.logger.error("=======convertByteCode start======");
+        project.logger.info("=======convertByteCode start======");
         inputs.each {
-            project.logger.error("inputs ${it}")
+            project.logger.info("inputs ${it}")
         }
-        project.logger.error("outDexFolder ${outDexFolder}")
-        project.logger.error("multidex ${multidex}")
-        project.logger.error("mainDexList ${mainDexList}")
-        project.logger.error("dexOptions ${dexOptions}")
-        project.logger.error("processOutputHandler ${processOutputHandler}")
-        project.logger.error("=======convertByteCode end======");
+        project.logger.info("outDexFolder ${outDexFolder}")
+        project.logger.info("multidex ${multidex}")
+        project.logger.info("mainDexList ${mainDexList}")
+        project.logger.info("dexOptions ${dexOptions}")
+        project.logger.info("processOutputHandler ${processOutputHandler}")
+        project.logger.info("=======convertByteCode end======");
         Profiler.start()
 
         Profiler.enter("mainDexList")
