@@ -24,6 +24,8 @@ import org.xml.sax.InputSource
 
 import javax.xml.xpath.XPath
 import javax.xml.xpath.XPathExpressionException
+import java.nio.MappedByteBuffer
+import java.nio.channels.FileChannel
 import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.jar.JarEntry
@@ -70,7 +72,6 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         project.logger.error("dexOptions ${dexOptions}")
         project.logger.error("processOutputHandler ${processOutputHandler}")
         project.logger.error("=======convertByteCode end======");
-//        super.convertByteCode(inputs, outDexFolder, multidex, mainDexList, dexOptions, processOutputHandler)
         Profiler.start()
 
         Profiler.enter("repackage")
@@ -130,8 +131,45 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         return outputs
     }
 
+    @Override
+    void preDexLibrary(File inputFile, File outFile, boolean multiDex, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) throws IOException, InterruptedException, ProcessException {
+        super.preDexLibrary(inputFile, outFile, multiDex, dexOptions, processOutputHandler)
+    }
+
     private File getDexOutputDir(File input, File rootDir, List<File> outputs) {
         return new File(rootDir, input.getName() - ".jar")
+    }
+
+    static String getMD5(String str) {
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5")
+            md5.update(str.getBytes("UTF-8"))
+            BigInteger bi = new BigInteger(1, md5.digest())
+            return String.format("%032x", bi).toLowerCase()
+        } catch (Exception e) {
+
+        }
+        return "00000000000000000000000000000000"
+    }
+
+    static String getFileMD5(File file) {
+        FileInputStream fileInputStream = new FileInputStream(file);
+        try {
+            MappedByteBuffer byteBuffer = fileInputStream.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            md5.update(byteBuffer);
+            BigInteger bi = new BigInteger(1, md5.digest());
+            return String.format("%032x", bi).toLowerCase()
+        } catch (Exception e) {
+        } finally {
+            if (null != fileInputStream) {
+                try {
+                    fileInputStream.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+        return "00000000000000000000000000000000"
     }
 
     Collection<File> repackage(Collection<File> inputs) throws IOException {
@@ -177,10 +215,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
 
         jars.each { File jarFile ->
             //calculate dest file
-            MessageDigest md5 = MessageDigest.getInstance("MD5")
-            md5.update(jarFile.getAbsolutePath().getBytes("UTF-8"))
-            BigInteger bi = new BigInteger(1, md5.digest())
-            String md5Value = String.format("%032x", bi).toLowerCase()
+            String md5Value =  getMD5(jarFile.getAbsolutePath())
             File destFile = new File(repackageDir, "repackage/${jarFile.getName() - ".jar"}_${md5Value}.jar")
 
             //add
