@@ -273,9 +273,13 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         repackageInputs.each {
             final File dexDir = getDexOutputDir(it, tmpDir)
             GFileUtils.mkdirs(dexDir)
-            runnableArrayList.add(new Runnable() {
+            runnableArrayList.add(new InformationRunnable() {
+                void printInformation(String name, int index, int total, long time) {
+                    project.logger.error("Finished to execute ${name} task at ${index}/${total} which spend ${time} ms from ${it} to ${dexDir}")
+                }
+
                 @Override
-                public void run() {
+                void run() {
                     try {
                         preDexLibrary(it, dexDir, multidex, dexOptions, processOutputHandler)
                     } catch (Exception e) {

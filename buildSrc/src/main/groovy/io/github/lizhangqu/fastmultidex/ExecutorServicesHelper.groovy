@@ -1,10 +1,8 @@
 package io.github.lizhangqu.fastmultidex
 
 import org.gradle.api.Project
-import java.util.concurrent.BlockingQueue
-import java.util.concurrent.CountDownLatch
+
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Consumer
 import java.util.stream.Stream
@@ -31,24 +29,24 @@ class ExecutorServicesHelper {
     public AtomicInteger index = new AtomicInteger(0)
     private Throwable exception
 
-    public void execute(List<Runnable> runnableList) throws InterruptedException {
+    public void execute(List<InformationRunnable> runnableList) throws InterruptedException {
         if (runnableList == null || runnableList.isEmpty()) {
             return
         }
 
-        Stream<Runnable> stream = runnableList.stream()
+        Stream<InformationRunnable> stream = runnableList.stream()
         if (threadCount > 1) {
             stream = stream.parallel()
         }
-        stream.forEach(new Consumer<Runnable>() {
+        stream.forEach(new Consumer<InformationRunnable>() {
             @Override
-            void accept(Runnable runnable) {
+            void accept(InformationRunnable runnable) {
                 try {
                     if (exception == null) {
                         long start = System.currentTimeMillis()
                         runnable.run()
                         long end = System.currentTimeMillis()
-                        project.logger.error("execute ${name} task at ${index.incrementAndGet()}/${runnableList.size()} spend ${(end - start)} ms")
+                        runnable.printInformation(name, index.incrementAndGet(), runnableList.size(), (end - start))
                     }
                 } catch (Throwable gradleException) {
                     exception = gradleException
