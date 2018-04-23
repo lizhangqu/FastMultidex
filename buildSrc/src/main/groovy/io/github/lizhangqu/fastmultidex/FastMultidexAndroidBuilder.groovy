@@ -39,16 +39,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
     private AndroidBuilder androidBuilder
 
     private JavaProcessExecutor javaProcessExecutor
-    /**
-     * Creates an AndroidBuilder.
-     * <p>
-     * <var>verboseExec</var> is needed on top of the ILogger due to remote exec tools not being
-     * able to output info and verbose messages separately.
-     *
-     * @param projectId @param createdBy the createdBy String for the apk manifest.
-     * @param processExecutor @param javaProcessExecutor @param errorReporter @param logger the Logger
-     * @param verboseExec whether external tools are launched in verbose mode
-     */
+
     FastMultidexAndroidBuilder(Project project, ApplicationVariantData applicationVariantData, AndroidBuilder androidBuilder, String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, ErrorReporter errorReporter, ILogger logger, boolean verboseExec) {
         super(projectId, createdBy, processExecutor, javaProcessExecutor, errorReporter, logger, verboseExec)
         this.project = project
@@ -102,74 +93,46 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
     }
 
-    private Collection<File> jar2dex(Collection<File> repackageInputs, boolean multidex, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) {
-        File intermediatesDir = this.applicationVariantData.getScope().getGlobalScope().getIntermediatesDir()
-        File tmpDir = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/jar2dex")
-        GFileUtils.mkdirs(tmpDir)
-        List<File> outputs = new ArrayList<>()
-        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(project, "jar2dex",
-                repackageInputs.size() > 8 ? 8
-                        : repackageInputs.size());
-
-        List<Runnable> runnableArrayList = new ArrayList<>()
-        repackageInputs.each {
-            final File dexDir = getDexOutputDir(it, tmpDir, outputs);
-            GFileUtils.mkdirs(dexDir)
-            runnableArrayList.add(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        preDexLibrary(it, dexDir, multidex, dexOptions, processOutputHandler)
-                    } catch (Exception e) {
-                        throw new GradleException(e.getMessage(), e)
-                    }
-                }
-            })
-            outputs.add(dexDir)
-        }
-        executorServicesHelper.execute(runnableArrayList)
-        return outputs
-    }
-
     @Override
     void preDexLibrary(File inputFile, File outFile, boolean multiDex, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) throws IOException, InterruptedException, ProcessException {
         super.preDexLibrary(inputFile, outFile, multiDex, dexOptions, processOutputHandler)
     }
 
-    private File getDexOutputDir(File input, File rootDir, List<File> outputs) {
-        return new File(rootDir, input.getName() - ".jar")
-    }
-
-    static String getMD5(String str) {
-        try {
-            MessageDigest md5 = MessageDigest.getInstance("MD5")
-            md5.update(str.getBytes("UTF-8"))
-            BigInteger bi = new BigInteger(1, md5.digest())
-            return String.format("%032x", bi).toLowerCase()
-        } catch (Exception e) {
-
+    Collection<String> getMainDexList(Collection<File> inputs) {
+        Set<String> mainDexList = new HashSet<String>()
+        if (inputs == null || inputs.size() == 0) {
+            return mainDexList
         }
-        return "00000000000000000000000000000000"
-    }
+        File manifestFile = applicationVariantData.getMainOutput().processResourcesTask.getManifestFile()
+        String applicationName = getApplicationName(manifestFile)
 
-    static String getFileMD5(File file) {
-        FileInputStream fileInputStream = new FileInputStream(file);
-        try {
-            MappedByteBuffer byteBuffer = fileInputStream.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length());
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
-            md5.update(byteBuffer);
-            BigInteger bi = new BigInteger(1, md5.digest());
-            return String.format("%032x", bi).toLowerCase()
-        } catch (Exception e) {
-        } finally {
-            if (null != fileInputStream) {
-                try {
-                    fileInputStream.close();
-                } catch (IOException e) {
-                }
+        ClassPool classPool = new ClassPool()
+        inputs.each {
+            if (it.isFile()) {
+                classPool.insertClassPath(it.getAbsolutePath())
+            } else {
+                classPool.appendClassPath(it.getAbsolutePath())
             }
         }
-        return "00000000000000000000000000000000"
+
+        Set<String> rootClasses = new LinkedHashSet<>()
+        rootClasses.add(applicationName)
+
+        rootClasses.each {
+            addRefClazz(classPool, it, mainDexList, "");
+        }
+
+        List<String> mainDexListClass = new ArrayList<String>()
+        mainDexList.each {
+            mainDexListClass.add(it.replaceAll("\\.", "/") + ".class")
+        }
+
+        File intermediatesDir = this.applicationVariantData.getScope().getGlobalScope().getIntermediatesDir()
+        File mainDexListFile = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/mainDexList.txt")
+        GFileUtils.deleteQuietly(mainDexListFile)
+        GFileUtils.touch(mainDexListFile)
+        FileUtils.writeLines(mainDexListFile, mainDexList)
+        return mainDexListClass
     }
 
     Collection<File> repackage(Collection<File> inputs) throws IOException {
@@ -215,7 +178,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
 
         jars.each { File jarFile ->
             //calculate dest file
-            String md5Value =  getMD5(jarFile.getAbsolutePath())
+            String md5Value = getMD5(jarFile.getAbsolutePath())
             File destFile = new File(repackageDir, "repackage/${jarFile.getName() - ".jar"}_${md5Value}.jar")
 
             //add
@@ -245,14 +208,8 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             }
 
             //close
-            try {
-                sourceJarFile.close()
-            } catch (Exception e) {
-            }
-            try {
-                destJarOutputStream.close()
-            } catch (Exception e) {
-            }
+            closeQuitely(sourceJarFile)
+            closeQuitely(destJarOutputStream)
 
             //if not copy to main dex jar, then copy single file to dest
             if (addedMainDexList.isEmpty()) {
@@ -261,86 +218,40 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
 
         //close
-        try {
-            mainDexJarOutputStream.close()
-        } catch (Exception e) {
-        }
+        closeQuitely(mainDexJarOutputStream)
 
         //add
         result.add(0, mainDexJar);
         return result
     }
 
-    @SuppressWarnings("GrMethodMayBeStatic")
-    void copyStream(InputStream inputStream, JarOutputStream jos, JarEntry ze, String pathName) {
-        try {
-            ZipEntry newEntry = new ZipEntry(pathName)
-            if (ze.getTime() != -1) {
-                newEntry.setTime(ze.getTime())
-                newEntry.setCrc(ze.getCrc())
-            }
-            jos.putNextEntry(newEntry);
-            IOUtils.copy(inputStream, jos)
-        } catch (Exception e) {
-            e.printStackTrace()
-        } finally {
-            try {
-                inputStream.close()
-            } catch (Exception e) {
-
-            }
-        }
-    }
-
-    @SuppressWarnings("GrMethodMayBeStatic")
-    String getApplicationName(File manifestFile) {
-        XPath xpath = AndroidXPathFactory.newXPath()
-        try {
-            return xpath.evaluate("/manifest/application/@android:name",
-                    new InputSource(new FileInputStream(manifestFile)))
-        } catch (XPathExpressionException e) {
-            // won't happen.
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e)
-        }
-        return null
-    }
-
-    Collection<String> getMainDexList(Collection<File> inputs) {
-        Set<String> mainDexList = new HashSet<String>()
-        if (inputs == null || inputs.size() == 0) {
-            return mainDexList
-        }
-        File manifestFile = applicationVariantData.getMainOutput().processResourcesTask.getManifestFile()
-        String applicationName = getApplicationName(manifestFile)
-
-        ClassPool classPool = new ClassPool()
-        inputs.each {
-            if (it.isFile()) {
-                classPool.insertClassPath(it.getAbsolutePath())
-            } else {
-                classPool.appendClassPath(it.getAbsolutePath())
-            }
-        }
-
-        Set<String> rootClasses = new LinkedHashSet<>()
-        rootClasses.add(applicationName)
-
-        rootClasses.each {
-            addRefClazz(classPool, it, mainDexList, "");
-        }
-
-        List<String> mainDexListClass = new ArrayList<String>()
-        mainDexList.each {
-            mainDexListClass.add(it.replaceAll("\\.", "/") + ".class")
-        }
-
+    private Collection<File> jar2dex(Collection<File> repackageInputs, boolean multidex, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) {
         File intermediatesDir = this.applicationVariantData.getScope().getGlobalScope().getIntermediatesDir()
-        File mainDexListFile = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/mainDexList.txt")
-        GFileUtils.deleteQuietly(mainDexListFile)
-        GFileUtils.touch(mainDexListFile)
-        FileUtils.writeLines(mainDexListFile, mainDexList)
-        return mainDexListClass
+        File tmpDir = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/jar2dex")
+        GFileUtils.mkdirs(tmpDir)
+        List<File> outputs = new ArrayList<>()
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(project, "jar2dex",
+                repackageInputs.size() > 8 ? 8
+                        : repackageInputs.size());
+
+        List<Runnable> runnableArrayList = new ArrayList<>()
+        repackageInputs.each {
+            final File dexDir = getDexOutputDir(it, tmpDir)
+            GFileUtils.mkdirs(dexDir)
+            runnableArrayList.add(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        preDexLibrary(it, dexDir, multidex, dexOptions, processOutputHandler)
+                    } catch (Exception e) {
+                        throw new GradleException(e.getMessage(), e)
+                    }
+                }
+            })
+            outputs.add(dexDir)
+        }
+        executorServicesHelper.execute(runnableArrayList)
+        return outputs
     }
 
     void addRefClazz(ClassPool classPool, String clazz, Set<String> classList, String root) {
@@ -369,12 +280,74 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
     }
 
-//    @Override
-//    DexByteCodeConverter getDexByteCodeConverter() {
-//        project.logger.error("=======getDexByteCodeConverter start======");
-//        def converter = super.getDexByteCodeConverter();
-//        project.logger.error("converter ${converter}")
-//        project.logger.error("=======getDexByteCodeConverter end======");
-//        return converter
-//    }
+    static void copyStream(InputStream inputStream, JarOutputStream jos, JarEntry ze, String pathName) {
+        try {
+            ZipEntry newEntry = new ZipEntry(pathName)
+            if (ze.getTime() != -1) {
+                newEntry.setTime(ze.getTime())
+                newEntry.setCrc(ze.getCrc())
+            }
+            jos.putNextEntry(newEntry);
+            IOUtils.copy(inputStream, jos)
+        } catch (Exception e) {
+            e.printStackTrace()
+        } finally {
+            closeQuitely(inputStream)
+        }
+    }
+
+    static String getApplicationName(File manifestFile) {
+        XPath xpath = AndroidXPathFactory.newXPath()
+        try {
+            return xpath.evaluate("/manifest/application/@android:name",
+                    new InputSource(new FileInputStream(manifestFile)))
+        } catch (XPathExpressionException e) {
+            // won't happen.
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e)
+        }
+        return null
+    }
+
+    static File getDexOutputDir(File input, File rootDir) {
+        return new File(rootDir, input.getName() - ".jar")
+    }
+
+    static void closeQuitely(Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close()
+            } catch (Exception e) {
+
+            }
+        }
+    }
+
+    static String getMD5(String str) {
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5")
+            md5.update(str.getBytes("UTF-8"))
+            BigInteger bi = new BigInteger(1, md5.digest())
+            return String.format("%032x", bi).toLowerCase()
+        } catch (Exception e) {
+
+        }
+        return "00000000000000000000000000000000"
+    }
+
+    static String getFileMD5(File file) {
+        FileInputStream fileInputStream = new FileInputStream(file);
+        try {
+            MappedByteBuffer byteBuffer = fileInputStream.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length());
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            md5.update(byteBuffer);
+            BigInteger bi = new BigInteger(1, md5.digest());
+            return String.format("%032x", bi).toLowerCase()
+        } catch (Exception e) {
+        } finally {
+            closeQuitely(fileInputStream)
+        }
+        return "00000000000000000000000000000000"
+    }
+
 }
