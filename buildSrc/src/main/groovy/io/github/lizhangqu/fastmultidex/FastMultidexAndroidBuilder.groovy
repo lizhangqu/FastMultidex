@@ -40,6 +40,8 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
 
     private JavaProcessExecutor javaProcessExecutor
 
+    public static final String CACHE_TYPE_PRE_DEX = "pre-dex-1"
+
     FastMultidexAndroidBuilder(Project project, ApplicationVariantData applicationVariantData, AndroidBuilder androidBuilder, String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, ErrorReporter errorReporter, ILogger logger, boolean verboseExec) {
         super(projectId, createdBy, processExecutor, javaProcessExecutor, errorReporter, logger, verboseExec)
         this.project = project
@@ -95,7 +97,33 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
 
     @Override
     void preDexLibrary(File inputFile, File outFile, boolean multiDex, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) throws IOException, InterruptedException, ProcessException {
+        String md5 = null
+        File dexFile = new File(outFile, "classes.dex")
+        if (!inputFile.getName().startsWith("combined") && !(inputFile.getName().startsWith("mainDex") && inputFile
+                .getName().endsWith("jar")) && inputFile.isFile()) {
+            if (inputFile.isFile()) {
+                md5 = getFileMD5(inputFile)
+            } else if (inputFile.isDirectory()) {
+                inputFile.eachFileRecurse { File file ->
+                    md5 = getMD5(md5 + getFileMD5(file))
+                }
+            }
+            md5 = getMD5(md5 + dexOptions.getJumboMode() + dexOptions.getKeepRuntimeAnnotatedClasses())
+
+            if (md5 != null && md5.length() > 0) {
+                CacheManager.fetchFile(CACHE_TYPE_PRE_DEX, md5, dexFile)
+            }
+
+            if (dexFile.exists() && dexFile.length() > 0) {
+                return
+            }
+        }
+
         super.preDexLibrary(inputFile, outFile, multiDex, dexOptions, processOutputHandler)
+
+        if (md5 != null && md5.length() > 0 && dexFile.exists()) {
+            CacheManager.putFile(CACHE_TYPE_PRE_DEX, md5, dexFile)
+        }
     }
 
     Collection<String> getMainDexList(Collection<File> inputs) {
@@ -332,7 +360,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         } catch (Exception e) {
 
         }
-        return "00000000000000000000000000000000"
+        return null
     }
 
     static String getFileMD5(File file) {
@@ -347,7 +375,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         } finally {
             closeQuitely(fileInputStream)
         }
-        return "00000000000000000000000000000000"
+        return null
     }
 
 }
