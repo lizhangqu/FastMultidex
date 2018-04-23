@@ -3,7 +3,6 @@ package io.github.lizhangqu.fastmultidex
 import com.android.build.gradle.internal.transforms.JarMerger
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.builder.core.AndroidBuilder
-import com.android.builder.core.DexByteCodeConverter
 import com.android.builder.core.DexOptions
 import com.android.builder.core.ErrorReporter
 import com.android.ide.common.process.JavaProcessExecutor
@@ -12,9 +11,9 @@ import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.process.ProcessOutputHandler
 import com.android.utils.ILogger
 import com.android.xml.AndroidXPathFactory
+import io.github.lizhangqu.fastmultidex.cache.CacheManager
 import javassist.ClassPool
 import javassist.CtClass
-import javassist.NotFoundException
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.IOUtils
 import org.gradle.api.GradleException

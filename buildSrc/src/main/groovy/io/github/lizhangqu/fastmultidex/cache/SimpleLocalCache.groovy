@@ -1,5 +1,6 @@
-package io.github.lizhangqu.fastmultidex
+package io.github.lizhangqu.fastmultidex.cache
 
+import io.github.lizhangqu.fastmultidex.cache.Cache
 import org.gradle.util.GFileUtils
 
 class SimpleLocalCache implements Cache {
@@ -59,6 +60,14 @@ class SimpleLocalCache implements Cache {
             GFileUtils.mkdirs(destFile)
             GFileUtils.copyDirectory(cacheFile, destFile)
         }
+    }
+
+    void clear(String type) {
+        GFileUtils.deleteQuietly(new File(cacheRootDir, type))
+    }
+
+    void clearAll() {
+        GFileUtils.deleteQuietly(cacheRootDir)
     }
 
 }
