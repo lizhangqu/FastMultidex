@@ -11,7 +11,7 @@ class SimpleLocalCache implements Cache {
     }
 
     File getLocalCacheFile(String type, String key) {
-        return new File(cacheDir, type + "/" + key);
+        return new File(cacheRootDir, type + "/" + key);
     }
 
     boolean putFile(String type, String key, File srcFile) {

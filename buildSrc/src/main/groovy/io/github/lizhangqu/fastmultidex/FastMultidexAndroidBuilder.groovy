@@ -40,7 +40,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
 
     private JavaProcessExecutor javaProcessExecutor
 
-    public static final String CACHE_TYPE_PRE_DEX = "pre-dex-1"
+    public static final String CACHE_TYPE_PRE_DEX = "pre-dex-1.0.0"
 
     FastMultidexAndroidBuilder(Project project, ApplicationVariantData applicationVariantData, AndroidBuilder androidBuilder, String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, ErrorReporter errorReporter, ILogger logger, boolean verboseExec) {
         super(projectId, createdBy, processExecutor, javaProcessExecutor, errorReporter, logger, verboseExec)
