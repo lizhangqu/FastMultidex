@@ -44,13 +44,13 @@ class ExecutorServicesHelper {
             @Override
             void accept(Runnable runnable) {
                 try {
-                    if (exception != null) {
-                        project.logger.error("excute " +
+                    if (exception == null) {
+                        project.logger.error("execute " +
                                 name +
                                 " task at " +
                                 index.incrementAndGet() +
                                 "/" +
-                                runnables.size())
+                                runnableList.size())
                         runnable.run()
                     }
                 } catch (Throwable gradleException) {
