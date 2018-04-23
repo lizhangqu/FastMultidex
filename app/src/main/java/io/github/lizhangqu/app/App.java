@@ -28,7 +28,7 @@ public class App extends Application {
                     "  \"b\":1,\n" +
                     "  \"c\":true   \n" +
                     "}");
-            Log.e("TAG", "parse901:" + parse);
+            Log.e("TAG", "parse:" + parse);
         } catch (Exception e) {
             e.printStackTrace();
         }

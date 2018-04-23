@@ -73,6 +73,8 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         Profiler.enter("jar2dex")
         Collection<File> jar2DexFiles = jar2dex(repackageInputs, multidex, dexOptions, processOutputHandler)
         Profiler.release()
+
+        Profiler.enter("copyDex")
         AtomicInteger atomicInteger = new AtomicInteger()
         jar2DexFiles.each { File dexDir ->
             File[] dexFiles = dexDir.listFiles(new FilenameFilter() {
@@ -92,6 +94,8 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
                 }
             }
         }
+        Profiler.release()
+        Profiler.release()
     }
 
     @Override
