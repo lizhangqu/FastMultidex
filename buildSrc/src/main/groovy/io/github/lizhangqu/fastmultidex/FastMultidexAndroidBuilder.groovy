@@ -11,6 +11,7 @@ import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.process.ProcessOutputHandler
 import com.android.utils.ILogger
 import com.android.xml.AndroidXPathFactory
+import groovy.io.FileType
 import io.github.lizhangqu.fastmultidex.cache.CacheManager
 import javassist.ClassPool
 import javassist.CtClass
@@ -108,7 +109,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
     void preDexLibrary(File inputFile, File outFile, boolean multiDex, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) throws IOException, InterruptedException, ProcessException {
         String md5 = null
         File dexFile = new File(outFile, "classes.dex")
-        if (inputFile.getName().endsWith("jar") && inputFile.isFile() ) {
+        if (inputFile.getName().endsWith("jar") && inputFile.isFile()) {
             if (inputFile.isFile()) {
                 md5 = getFileMD5(inputFile)
             } else if (inputFile.isDirectory()) {
@@ -191,17 +192,32 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
 
         if (!folders.isEmpty()) {
-            int folderNum = 0
+            int maxClassNum = 1000
+            int currentNum = 0
+            File mergedJar = null
+            JarMerger jarMerger = null
+            folders.each { File folder ->
+                currentNum++
+                folder.eachFileRecurse(FileType.FILES) { File file ->
+                    currentNum++
+                    if (mergedJar == null || (currentNum % maxClassNum) >= (maxClassNum - 1)) {
 
-            folders.each {
-                folderNum++
-                File mergedJar = new File(repackageDir, "jarmerge/combined_${folderNum}.jar")
-                GFileUtils.deleteQuietly(mergedJar)
-                GFileUtils.touch(mergedJar)
-                JarMerger jarMerger = new JarMerger(mergedJar)
-                jarMerger.addFolder(it)
+                        if (mergedJar != null) {
+                            jarMerger.close()
+                            if (mergedJar.length() > 0 && !jars.contains(mergedJar)) {
+                                jars.add(mergedJar)
+                            }
+                        }
+                        mergedJar = new File(repackageDir, "jarmerge/combined_${folder.getName()}_${((int) (currentNum / 100)) + 1}.jar")
+                        GFileUtils.deleteQuietly(mergedJar)
+                        GFileUtils.touch(mergedJar)
+                        jarMerger = new JarMerger(mergedJar)
+                    }
+                    String entryPath = file.getAbsolutePath() - (folder.getAbsolutePath() + File.separator)
+                    jarMerger.addEntry(entryPath, FileUtils.readFileToByteArray(file))
+                }
                 jarMerger.close()
-                if (mergedJar.length() > 0) {
+                if (mergedJar.length() > 0 && !jars.contains(mergedJar)) {
                     jars.add(mergedJar)
                 }
             }
