@@ -108,8 +108,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
     void preDexLibrary(File inputFile, File outFile, boolean multiDex, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) throws IOException, InterruptedException, ProcessException {
         String md5 = null
         File dexFile = new File(outFile, "classes.dex")
-        if (!inputFile.getName().startsWith("combined") && !(inputFile.getName().startsWith("mainDex") && inputFile
-                .getName().endsWith("jar")) && inputFile.isFile()) {
+        if (inputFile.getName().endsWith("jar") && inputFile.isFile() ) {
             if (inputFile.isFile()) {
                 md5 = getFileMD5(inputFile)
             } else if (inputFile.isDirectory()) {
@@ -192,30 +191,19 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
 
         if (!folders.isEmpty()) {
-            int classNum = 0
-            File mergedJar = new File(repackageDir, "jarmerge/combined.jar")
-            GFileUtils.deleteQuietly(mergedJar)
-            GFileUtils.touch(mergedJar)
-            JarMerger jarMerger = new JarMerger(mergedJar)
+            int folderNum = 0
+
             folders.each {
-                classNum++
-                if (classNum % 100 >= 99) {
-                    jarMerger.close()
-                    if (mergedJar.length() > 0) {
-                        jars.add(mergedJar)
-                    }
-                    mergedJar = new File(repackageDir, "jarmerge/combined_${classNum / 100 + 1}.jar")
-                    GFileUtils.deleteQuietly(mergedJar)
-                    GFileUtils.touch(mergedJar)
-                    jarMerger = new JarMerger(mergedJar)
-                    jarMerger.addFolder(it)
-                } else {
-                    jarMerger.addFolder(it)
+                folderNum++
+                File mergedJar = new File(repackageDir, "jarmerge/combined_${folderNum}.jar")
+                GFileUtils.deleteQuietly(mergedJar)
+                GFileUtils.touch(mergedJar)
+                JarMerger jarMerger = new JarMerger(mergedJar)
+                jarMerger.addFolder(it)
+                jarMerger.close()
+                if (mergedJar.length() > 0) {
+                    jars.add(mergedJar)
                 }
-            }
-            jarMerger.close()
-            if (mergedJar.length() > 0) {
-                jars.add(mergedJar)
             }
         }
 
