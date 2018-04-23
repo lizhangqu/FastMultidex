@@ -192,7 +192,6 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
 
         if (!folders.isEmpty()) {
-            int totalNum = 0
             int classNum = 0
             File mergedJar = new File(repackageDir, "jarmerge/combined.jar")
             GFileUtils.deleteQuietly(mergedJar)
@@ -200,18 +199,16 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             JarMerger jarMerger = new JarMerger(mergedJar)
             folders.each {
                 classNum++
-                totalNum++
-                if (classNum > 100) {
+                if (classNum % 100 >= 99) {
                     jarMerger.close()
                     if (mergedJar.length() > 0) {
                         jars.add(mergedJar)
                     }
-                    mergedJar = new File(repackageDir, "jarmerge/combined_${totalNum / 100 + 1}.jar")
+                    mergedJar = new File(repackageDir, "jarmerge/combined_${classNum / 100 + 1}.jar")
                     GFileUtils.deleteQuietly(mergedJar)
                     GFileUtils.touch(mergedJar)
                     jarMerger = new JarMerger(mergedJar)
                     jarMerger.addFolder(it)
-                    classNum = 0
                 } else {
                     jarMerger.addFolder(it)
                 }
