@@ -192,12 +192,27 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
 
         if (!folders.isEmpty()) {
-            File mergedJar = new File(repackageDir, "jarmerge/combined.jar")
+            int classNum = 0
+            File mergedJar = new File(repackageDir, "jarmerge/combined_0.jar")
             GFileUtils.deleteQuietly(mergedJar)
             GFileUtils.touch(mergedJar)
             JarMerger jarMerger = new JarMerger(mergedJar)
             folders.each {
-                jarMerger.addFolder(it)
+                classNum++
+                if (classNum > 100) {
+                    jarMerger.close()
+                    if (mergedJar.length() > 0) {
+                        jars.add(mergedJar)
+                    }
+                    mergedJar = new File(repackageDir, "jarmerge/combined_${classNum / 100 + 1}.jar")
+                    GFileUtils.deleteQuietly(mergedJar)
+                    GFileUtils.touch(mergedJar)
+                    jarMerger = new JarMerger(mergedJar)
+                    jarMerger.addFolder(it)
+                    classNum = 0
+                } else {
+                    jarMerger.addFolder(it)
+                }
             }
             jarMerger.close()
             if (mergedJar.length() > 0) {
