@@ -12,7 +12,6 @@ import org.gradle.api.GradleException
  * from atlas
  */
 class ExecutorServicesHelper {
-    private ExecutorService executorService = null
     private Project project
     private String name
     private int threadCount
