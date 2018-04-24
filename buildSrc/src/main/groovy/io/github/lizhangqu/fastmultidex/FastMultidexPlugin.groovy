@@ -83,7 +83,7 @@ class FastMultidexPlugin implements Plugin<Project> {
                     if (fullName.toLowerCase().contains("debug")) {
                         BuildType buildType = variantConfiguration.getBuildType()
                         ProductFlavor productFlavor = variantConfiguration.getMergedFlavor()
-                        if (buildType.getMultiDexEnabled() || productFlavor.getMultiDexEnabled()) {
+                        if (buildType.getMultiDexEnabled() || (productFlavor.getMultiDexEnabled() && productFlavor.getName() != "main")) {
                             throw new GradleException("You must disable multidex in build.gradle when use fast multidex. Like this config:\n\n" +
                                     "android{\n" +
                                     "    defaultConfig {\n" +
