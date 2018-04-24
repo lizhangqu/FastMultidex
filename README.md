@@ -7,15 +7,12 @@
 ```
 android{
     defaultConfig {
-        multiDexEnabled false
+        multiDexEnabled true
     }
     
     buildTypes {
         debug {
             multiDexEnabled false
-        }
-        release {
-            multiDexEnabled true
         }
     }
 }
