@@ -102,7 +102,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         Profiler.release()
         Profiler.release()
 
-        project.logger.error(Profiler.dump())
+        project.logger.lifecycle(Profiler.dump())
     }
 
     @Override
@@ -293,7 +293,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             GFileUtils.mkdirs(dexDir)
             runnableArrayList.add(new InformationRunnable() {
                 void printInformation(String name, int index, int total, long time) {
-                    project.logger.error("Finished to execute ${name} task at ${index}/${total} which spend ${time} ms from ${it} to ${dexDir}")
+                    project.logger.lifecycle("Finished to execute ${name} task at ${index}/${total} which spend ${time} ms from ${it} to ${dexDir}")
                 }
 
                 @Override
