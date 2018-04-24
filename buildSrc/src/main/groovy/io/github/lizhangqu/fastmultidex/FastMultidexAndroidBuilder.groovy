@@ -152,10 +152,14 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             }
         }
 
-        Set<String> rootClasses = new LinkedHashSet<>()
-        rootClasses.add(applicationName)
+        Set<String> entryClasses = new LinkedHashSet<>()
+        entryClasses.add("android.support.multidex.MultiDexApplication")
+        entryClasses.add("android.support.multidex.MultiDex")
+        entryClasses.add("android.support.multidex.MultiDexExtractor")
+        entryClasses.add("android.support.multidex.ZipUtil")
+        entryClasses.add(applicationName)
 
-        rootClasses.each {
+        entryClasses.each {
             addRefClazz(classPool, it, mainDexList, "");
         }
 
