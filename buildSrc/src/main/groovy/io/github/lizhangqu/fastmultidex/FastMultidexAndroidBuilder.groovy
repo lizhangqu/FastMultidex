@@ -197,29 +197,28 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             File mergedJar = null
             JarMerger jarMerger = null
             folders.each { File folder ->
-                currentNum++
                 folder.eachFileRecurse(FileType.FILES) { File file ->
                     currentNum++
+                    String entryPath = file.getAbsolutePath() - (folder.getAbsolutePath() + File.separator)
                     if (mergedJar == null || (currentNum % maxClassNum) >= (maxClassNum - 1)) {
-
                         if (mergedJar != null) {
                             jarMerger.close()
                             if (mergedJar.length() > 0 && !jars.contains(mergedJar)) {
                                 jars.add(mergedJar)
                             }
                         }
-                        mergedJar = new File(repackageDir, "jarmerge/combined_${folder.getName()}_${((int) (currentNum / maxClassNum)) + 1}.jar")
+                        mergedJar = new File(repackageDir, "jarmerge/combined_${folder.getName()}_${((int) ((currentNum + 1) / maxClassNum))}.jar")
                         GFileUtils.deleteQuietly(mergedJar)
                         GFileUtils.touch(mergedJar)
                         jarMerger = new JarMerger(mergedJar)
                     }
-                    String entryPath = file.getAbsolutePath() - (folder.getAbsolutePath() + File.separator)
                     jarMerger.addEntry(entryPath, FileUtils.readFileToByteArray(file))
                 }
-                jarMerger.close()
-                if (mergedJar.length() > 0 && !jars.contains(mergedJar)) {
-                    jars.add(mergedJar)
-                }
+            }
+
+            jarMerger.close()
+            if (mergedJar.length() > 0 && !jars.contains(mergedJar)) {
+                jars.add(mergedJar)
             }
         }
 
