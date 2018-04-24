@@ -85,16 +85,15 @@ class FastMultidexPlugin implements Plugin<Project> {
                         ProductFlavor productFlavor = variantConfiguration.getMergedFlavor()
                         if (buildType.getMultiDexEnabled() || productFlavor.getMultiDexEnabled()) {
                             throw new GradleException("You must disable multidex in build.gradle when use fast multidex. Like this config:\n\n" +
-                                    "defaultConfig {\n" +
-                                    "    multiDexEnabled false\n" +
-                                    "}\n" +
-                                    "\n" +
-                                    "buildTypes {\n" +
-                                    "    debug {\n" +
-                                    "        multiDexEnabled false\n" +
-                                    "    }\n" +
-                                    "    release {\n" +
+                                    "android{\n" +
+                                    "    defaultConfig {\n" +
                                     "        multiDexEnabled true\n" +
+                                    "    }\n" +
+                                    "    \n" +
+                                    "    buildTypes {\n" +
+                                    "        debug {\n" +
+                                    "            multiDexEnabled false\n" +
+                                    "        }\n" +
                                     "    }\n" +
                                     "}")
                         }
