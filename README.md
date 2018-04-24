@@ -40,3 +40,7 @@ android{
  - 首次在无缓存的情况下构建会比较耗时
  - 在已有缓存基础上，构建会大大提速
  - 不支持输入文件为单一文件的提速
+ 
+#### 感谢
+
+ - [atlas](https://github.com/alibaba/atlas)
