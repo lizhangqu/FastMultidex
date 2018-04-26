@@ -16,8 +16,11 @@ import java.lang.reflect.Method
 import java.nio.file.attribute.FileTime
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
+import java.util.zip.CRC32
+import java.util.zip.Deflater
 import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream;
 
 /**
  * @author lizhangqu
@@ -58,6 +61,8 @@ class FastMultidexJarMerger {
             FileOutputStream fos = closer.register(new FileOutputStream(jarFile));
             BufferedOutputStream bos = closer.register(new BufferedOutputStream(fos));
             jarOutputStream = closer.register(new JarOutputStream(bos));
+            jarOutputStream.setMethod(JarOutputStream.STORED)
+            jarOutputStream.setLevel(Deflater.NO_COMPRESSION)
         }
     }
 
@@ -202,7 +207,11 @@ class FastMultidexJarMerger {
         init();
 
         JarEntry newEntry = new JarEntry(path)
+        CRC32 crc32 = new CRC32()
+        crc32.update(bytes)
         newEntry.setMethod(JarEntry.STORED)
+        newEntry.setCrc(crc32.getValue())
+        newEntry.setSize(bytes.length)
         newEntry.setLastModifiedTime(ZERO_TIME)
         newEntry.setLastAccessTime(ZERO_TIME)
         newEntry.setCreationTime(ZERO_TIME)
