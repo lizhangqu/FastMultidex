@@ -123,7 +123,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             }
 
             if (dexFile.exists() && dexFile.length() > 0) {
-                project.logger.lifecycle("inputFile ${inputFile} hit cache ${dexFile}")
+                project.logger.lifecycle("get cache from ${dexFile} for ${inputFile}")
                 return
             }
         }
@@ -132,6 +132,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
 
         if (md5 != null && md5.length() > 0 && dexFile.exists()) {
             CacheManager.putFile(CACHE_TYPE_PRE_DEX, md5, dexFile)
+            project.logger.lifecycle("put cache to ${dexFile} for ${inputFile}")
         }
     }
 
