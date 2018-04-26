@@ -214,7 +214,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
                         mergedJar = new File(repackageDir, "jarmerge/combined_${folder.getName()}_${((int) ((currentNum + 1) / maxClassNum))}.jar")
                         GFileUtils.deleteQuietly(mergedJar)
                         GFileUtils.touch(mergedJar)
-                        jarMerger = new JarMerger(mergedJar)
+                        jarMerger = new FastMultidexJarMerger(mergedJar)
                     }
                     jarMerger.addEntry(entryPath, FileUtils.readFileToByteArray(file))
                 }
