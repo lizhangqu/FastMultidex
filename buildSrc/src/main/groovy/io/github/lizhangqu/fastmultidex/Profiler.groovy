@@ -7,6 +7,20 @@ import java.text.MessageFormat
  */
 final class Profiler {
 
+    static String ANSI_BOLD_WHITE = "\u001B[0;1m"
+    static String ANSI_RESET = "\u001B[0m"
+    static String ANSI_BLACK = "\u001B[30m"
+    static String ANSI_RED = "\u001B[31m"
+    static String ANSI_GREEN = "\u001B[32m"
+    static String ANSI_YELLOW = "\u001B[33m"
+    static String ANSI_BLUE = "\u001B[34m"
+    static String ANSI_PURPLE = "\u001B[35m"
+    static String ANSI_CYAN = "\u001B[36m"
+    static String ANSI_WHITE = "\u001B[37m"
+    static String CHECK_MARK = "\u2713"
+    static String NEUTRAL_FACE = "\u0CA0_\u0CA0"
+    static String X_MARK = "\u274C"
+
     private static final ThreadLocal entryStack = new ThreadLocal()
 
     Profiler() {
@@ -240,17 +254,17 @@ final class Profiler {
                 pattern.append(" - {0}")
             }
 
-            buffer.append(MessageFormat.format(pattern.toString(), params))
+            buffer.append(MessageFormat.format(ANSI_BLUE + pattern.toString() + ANSI_RESET, params))
 
             for (int i = 0; i < this.subEntries.size(); ++i) {
                 Entry subEntry = (Entry) this.subEntries.get(i)
                 buffer.append('\n')
                 if (i == this.subEntries.size() - 1) {
-                    subEntry.toString(buffer, prefix2 + "`---", prefix2 + "    ")
+                    subEntry.toString(buffer, ANSI_BLUE + prefix2 + "`---" + ANSI_RESET, ANSI_BLUE + prefix2 + "    " + ANSI_RESET)
                 } else if (i == 0) {
-                    subEntry.toString(buffer, prefix2 + "+---", prefix2 + "|   ")
+                    subEntry.toString(buffer, ANSI_BLUE + prefix2 + "+---" + ANSI_RESET, ANSI_BLUE + prefix2 + "|   " + ANSI_RESET)
                 } else {
-                    subEntry.toString(buffer, prefix2 + "+---", prefix2 + "|   ")
+                    subEntry.toString(buffer, ANSI_BLUE + prefix2 + "+---" + ANSI_RESET, ANSI_BLUE + prefix2 + "|   " + ANSI_RESET)
                 }
             }
         }
