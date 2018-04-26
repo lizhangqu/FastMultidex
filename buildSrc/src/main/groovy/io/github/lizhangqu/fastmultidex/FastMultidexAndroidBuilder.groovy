@@ -41,12 +41,20 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
 
     public static final String CACHE_TYPE_PRE_DEX = "pre-dex-1.0.0"
 
+    private int mainDexMaxNumber
+    private int jarMergeMaxNumber
+
     FastMultidexAndroidBuilder(Project project, ApplicationVariantData applicationVariantData, AndroidBuilder androidBuilder, String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, ErrorReporter errorReporter, ILogger logger, boolean verboseExec) {
         super(projectId, createdBy, processExecutor, javaProcessExecutor, errorReporter, logger, verboseExec)
         this.project = project
         this.applicationVariantData = applicationVariantData
         this.androidBuilder = androidBuilder
         this.javaProcessExecutor = javaProcessExecutor
+
+
+        FastMultidexExtension fastMultidexExtension = project.getExtensions().getByType(FastMultidexExtension.class)
+        mainDexMaxNumber = fastMultidexExtension.mainDexMaxNumber
+        jarMergeMaxNumber = fastMultidexExtension.jarMergeMaxNumber
     }
 
     @Override
@@ -201,7 +209,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
 
         if (!folders.isEmpty()) {
-            int maxClassNum = 300
+            int maxClassNum = jarMergeMaxNumber
             int currentNum = 0
             File mergedJar = null
             FastMultidexJarMerger jarMerger = null
@@ -329,7 +337,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             if (null != ctClass) {
                 project.logger.info("[MainDex] add " + clazz + " to main dex list referenced by " + root)
                 classList.add(clazz)
-                if (classList.size() > 3000) {
+                if (classList.size() > mainDexMaxNumber) {
                     return
                 }
                 Collection<String> references = ctClass.getRefClasses()

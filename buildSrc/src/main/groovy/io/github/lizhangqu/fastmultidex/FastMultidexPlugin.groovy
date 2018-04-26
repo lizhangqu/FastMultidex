@@ -58,6 +58,7 @@ class FastMultidexPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
+        project.getExtensions().create("fastMultidex", FastMultidexExtension.class)
         String androidGradlePluginVersionCompat = getAndroidGradlePluginVersionCompat()
         //only 2.+ should do it. 3.+ don't need it
         if (androidGradlePluginVersionCompat.startsWith("2.")) {
