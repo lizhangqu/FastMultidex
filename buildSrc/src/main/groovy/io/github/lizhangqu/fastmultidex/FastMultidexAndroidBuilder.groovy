@@ -123,6 +123,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             }
 
             if (dexFile.exists() && dexFile.length() > 0) {
+                project.logger.lifecycle("inputFile ${inputFile} hit cache ${dexFile}")
                 return
             }
         }
