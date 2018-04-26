@@ -134,6 +134,10 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             CacheManager.putFile(CACHE_TYPE_PRE_DEX, md5, dexFile)
             project.logger.lifecycle("put cache to ${dexFile} for ${inputFile}")
         }
+
+        if (!dexFile.exists()) {
+            project.logger.lifecycle("not exist ${outFile}, maybe it has been extra to mainDex")
+        }
     }
 
     Collection<String> getMainDexList(Collection<File> inputs) {
