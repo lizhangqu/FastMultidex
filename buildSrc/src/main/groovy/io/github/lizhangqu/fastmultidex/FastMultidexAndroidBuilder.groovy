@@ -1,6 +1,5 @@
 package io.github.lizhangqu.fastmultidex
 
-import com.android.build.gradle.internal.transforms.JarMerger
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DexOptions
@@ -199,7 +198,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             int maxClassNum = 300
             int currentNum = 0
             File mergedJar = null
-            JarMerger jarMerger = null
+            FastMultidexJarMerger jarMerger = null
             folders.each { File folder ->
                 folder.eachFileRecurse(FileType.FILES) { File file ->
                     currentNum++
