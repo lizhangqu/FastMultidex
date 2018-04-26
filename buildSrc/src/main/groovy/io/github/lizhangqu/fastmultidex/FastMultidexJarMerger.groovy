@@ -203,7 +203,6 @@ class FastMultidexJarMerger {
 
         JarEntry newEntry = new JarEntry(path)
         newEntry.setMethod(JarEntry.STORED)
-        newEntry.setTime(ZERO_TIME)
         newEntry.setLastModifiedTime(ZERO_TIME)
         newEntry.setLastAccessTime(ZERO_TIME)
         newEntry.setCreationTime(ZERO_TIME)
