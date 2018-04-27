@@ -48,8 +48,9 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
 
     private int mainDexMaxNumber
     private int jarMergeMaxNumber
-    private int secondDexMaxNumber
     private boolean shouldDexMerge
+    private int maxMethodNumber
+    private int maxFieldNumber
 
     FastMultidexAndroidBuilder(Project project, ApplicationVariantData applicationVariantData, AndroidBuilder androidBuilder, String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, ErrorReporter errorReporter, ILogger logger, boolean verboseExec) {
         super(projectId, createdBy, processExecutor, javaProcessExecutor, errorReporter, logger, verboseExec)
@@ -62,8 +63,17 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         FastMultidexExtension fastMultidexExtension = project.getExtensions().getByType(FastMultidexExtension.class)
         mainDexMaxNumber = fastMultidexExtension.mainDexMaxNumber
         jarMergeMaxNumber = fastMultidexExtension.jarMergeMaxNumber
-        secondDexMaxNumber = fastMultidexExtension.secondDexMaxNumber
         shouldDexMerge = fastMultidexExtension.dexMerge
+        maxMethodNumber = fastMultidexExtension.maxMethodNumber
+        maxFieldNumber = fastMultidexExtension.maxFieldNumber
+
+        if (maxMethodNumber > 65535) {
+            throw new GradleException("maxMethodNumber to large")
+        }
+
+        if (maxFieldNumber > 65535) {
+            throw new GradleException("maxFieldNumber to large")
+        }
 
     }
 
@@ -99,9 +109,9 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         Profiler.enter("dexMerge")
         int copyDexNumber = 0
 
-        int dexFileSize = jar2DexFiles.size()
-        int dexNumberToMerge = (dexFileSize / secondDexMaxNumber) + (dexFileSize % secondDexMaxNumber == 0 ? 0 : 1)
-        int dexMergeAddNumber = 0
+        int currentMethodIdsUsed = 0
+        int currentFieldIdsUsed = 0
+
         List<List<Dex>> dexTotalList = new ArrayList<List<Dex>>()
         List<Dex> dexList = new ArrayList<Dex>()
         dexTotalList.add(dexList)
@@ -121,11 +131,19 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             } else {
                 dexFiles.each {
                     if (shouldDexMerge) {
-                        dexList.add(new Dex(it))
-                        dexMergeAddNumber++
-                        if (dexMergeAddNumber >= dexNumberToMerge) {
-                            dexMergeAddNumber = 0
+                        Dex dex = new Dex(it)
+                        int dexMethodIds = dex.getTableOfContents().methodIds.size
+                        int dexFieldIds = dex.getTableOfContents().fieldIds.size
+
+                        if (dexMethodIds + currentMethodIdsUsed <= maxMethodNumber && dexFieldIds + currentFieldIdsUsed <= maxFieldNumber) {
+                            dexList.add(dex)
+                            currentMethodIdsUsed += dexMethodIds
+                            currentFieldIdsUsed += dexFieldIds
+                        } else {
                             dexList = new ArrayList<Dex>()
+                            dexList.add(dex)
+                            currentMethodIdsUsed = dexMethodIds
+                            currentFieldIdsUsed = dexFieldIds
                             dexTotalList.add(dexList)
                         }
                     } else {
@@ -219,7 +237,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
 
         File intermediatesDir = this.applicationVariantData.getScope().getGlobalScope().getIntermediatesDir()
-        File mainDexListFile = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/mainDexList.txt")
+        File mainDexListFile = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/mainDex/mainDexList.txt")
         GFileUtils.deleteQuietly(mainDexListFile)
         GFileUtils.touch(mainDexListFile)
         FileUtils.writeLines(mainDexListFile, mainDexList)
@@ -231,7 +249,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             return null
         }
         File intermediatesDir = this.applicationVariantData.getScope().getGlobalScope().getIntermediatesDir()
-        File repackageDir = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}")
+        File repackageDir = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/repackage")
         GFileUtils.deleteDirectory(repackageDir)
         GFileUtils.mkdirs(repackageDir)
 
@@ -261,7 +279,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
                                 jars.add(mergedJar)
                             }
                         }
-                        mergedJar = new File(repackageDir, "jarmerge/combined_${folder.getName()}_${((int) ((currentNum + 1) / maxClassNum))}.jar")
+                        mergedJar = new File(repackageDir.getParentFile(), "jarmerge/combined_${folder.getName()}_${((int) ((currentNum + 1) / maxClassNum))}.jar")
                         GFileUtils.deleteQuietly(mergedJar)
                         GFileUtils.touch(mergedJar)
                         jarMerger = new FastMultidexJarMerger(mergedJar)
@@ -277,7 +295,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
 
         List<File> result = new ArrayList<>()
-        File mainDexJar = new File(repackageDir, "repackage/mainDex.jar")
+        File mainDexJar = new File(repackageDir, "rmainDex.jar")
         GFileUtils.deleteQuietly(mainDexJar)
         GFileUtils.touch(mainDexJar)
         JarOutputStream mainDexJarOutputStream = new JarOutputStream(
@@ -286,7 +304,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         jars.each { File jarFile ->
             //calculate dest file
             String md5Value = getMD5(jarFile.getAbsolutePath())
-            File destFile = new File(repackageDir, "repackage/${jarFile.getName() - ".jar"}_${md5Value}.jar")
+            File destFile = new File(repackageDir, "${jarFile.getName() - ".jar"}_${md5Value}.jar")
 
             //add
             result.add(destFile)
@@ -335,6 +353,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
     private Collection<File> jar2dex(Collection<File> repackageInputs, boolean multidex, DexOptions dexOptions, ProcessOutputHandler processOutputHandler) {
         File intermediatesDir = this.applicationVariantData.getScope().getGlobalScope().getIntermediatesDir()
         File tmpDir = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/jar2dex")
+        GFileUtils.deleteQuietly(tmpDir)
         GFileUtils.mkdirs(tmpDir)
         List<File> outputs = new ArrayList<>()
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(project, "jar2dex",
@@ -368,6 +387,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
     private Collection<File> dexMerge(List<List<Dex>> inputDexList) {
         File intermediatesDir = this.applicationVariantData.getScope().getGlobalScope().getIntermediatesDir()
         File tmpDir = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/dexMerge")
+        GFileUtils.deleteDirectory(tmpDir)
         GFileUtils.mkdirs(tmpDir)
         List<File> outputs = new ArrayList<>()
         ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(project, "dexMerge",

@@ -2,10 +2,9 @@ apply plugin: 'com.android.application'
 apply plugin: 'fast-multidex'
 
 fastMultidex {
-    mainDexMaxNumber = 100
+    mainDexMaxNumber = 1000
     jarMergeMaxNumber = 50
-    secondDexMaxNumber = 5
-    dexMerge = false
+    dexMerge = true
 }
 
 android {
