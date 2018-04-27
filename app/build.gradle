@@ -4,6 +4,8 @@ apply plugin: 'fast-multidex'
 fastMultidex {
     mainDexMaxNumber = 100
     jarMergeMaxNumber = 50
+    secondDexMaxNumber = 5
+    dexMerge = false
 }
 
 android {

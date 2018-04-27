@@ -4,9 +4,14 @@ import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DexOptions
 import com.android.builder.core.ErrorReporter
+import com.android.dex.Dex
+import com.android.dx.command.dexer.DxContext
+import com.android.dx.merge.CollisionPolicy
+import com.android.dx.merge.DexMerger
 import com.android.ide.common.process.JavaProcessExecutor
 import com.android.ide.common.process.ProcessException
 import com.android.ide.common.process.ProcessExecutor
+import com.android.ide.common.process.ProcessOutput
 import com.android.ide.common.process.ProcessOutputHandler
 import com.android.utils.ILogger
 import com.android.xml.AndroidXPathFactory
@@ -43,6 +48,8 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
 
     private int mainDexMaxNumber
     private int jarMergeMaxNumber
+    private int secondDexMaxNumber
+    private boolean shouldDexMerge
 
     FastMultidexAndroidBuilder(Project project, ApplicationVariantData applicationVariantData, AndroidBuilder androidBuilder, String projectId, String createdBy, ProcessExecutor processExecutor, JavaProcessExecutor javaProcessExecutor, ErrorReporter errorReporter, ILogger logger, boolean verboseExec) {
         super(projectId, createdBy, processExecutor, javaProcessExecutor, errorReporter, logger, verboseExec)
@@ -55,6 +62,9 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         FastMultidexExtension fastMultidexExtension = project.getExtensions().getByType(FastMultidexExtension.class)
         mainDexMaxNumber = fastMultidexExtension.mainDexMaxNumber
         jarMergeMaxNumber = fastMultidexExtension.jarMergeMaxNumber
+        secondDexMaxNumber = fastMultidexExtension.secondDexMaxNumber
+        shouldDexMerge = fastMultidexExtension.dexMerge
+
     }
 
     @Override
@@ -86,8 +96,16 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         Collection<File> jar2DexFiles = jar2dex(repackageInputs, multidex, dexOptions, processOutputHandler)
         Profiler.release()
 
-        Profiler.enter("copyDex")
-        AtomicInteger atomicInteger = new AtomicInteger()
+        Profiler.enter("dexMerge")
+        int copyDexNumber = 0
+
+        int dexFileSize = jar2DexFiles.size()
+        int dexNumberToMerge = (dexFileSize / secondDexMaxNumber) + (dexFileSize % secondDexMaxNumber == 0 ? 0 : 1)
+        int dexMergeAddNumber = 0
+        List<List<Dex>> dexTotalList = new ArrayList<List<Dex>>()
+        List<Dex> dexList = new ArrayList<Dex>()
+        dexTotalList.add(dexList)
+
         jar2DexFiles.each { File dexDir ->
             File[] dexFiles = dexDir.listFiles(new FilenameFilter() {
                 @Override
@@ -98,14 +116,33 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             if (dexDir.getName().startsWith("mainDex")) {
                 dexFiles.each {
                     GFileUtils.copyFile(it, new File(outDexFolder, "classes.dex"))
-                    atomicInteger.incrementAndGet()
+                    copyDexNumber++
                 }
             } else {
                 dexFiles.each {
-                    GFileUtils.copyFile(it, new File(outDexFolder, "classes${atomicInteger.incrementAndGet()}.dex"))
+                    if (shouldDexMerge) {
+                        dexList.add(new Dex(it))
+                        dexMergeAddNumber++
+                        if (dexMergeAddNumber >= dexNumberToMerge) {
+                            dexMergeAddNumber = 0
+                            dexList = new ArrayList<Dex>()
+                            dexTotalList.add(dexList)
+                        }
+                    } else {
+                        GFileUtils.copyFile(it, new File(outDexFolder, "classes${++copyDexNumber}.dex"))
+                    }
+
                 }
             }
         }
+
+        if (shouldDexMerge) {
+            Collection<File> dexMergedDexFile = dexMerge(dexTotalList)
+            dexMergedDexFile.each {
+                GFileUtils.copyFile(it, new File(outDexFolder, it.getName()))
+            }
+        }
+
         Profiler.release()
         Profiler.release()
 
@@ -323,6 +360,44 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
                 }
             })
             outputs.add(dexDir)
+        }
+        executorServicesHelper.execute(runnableArrayList)
+        return outputs
+    }
+
+    private Collection<File> dexMerge(List<List<Dex>> inputDexList) {
+        File intermediatesDir = this.applicationVariantData.getScope().getGlobalScope().getIntermediatesDir()
+        File tmpDir = new File(intermediatesDir, "fastmultidex/${this.applicationVariantData.getVariantConfiguration().getDirName()}/dexMerge")
+        GFileUtils.mkdirs(tmpDir)
+        List<File> outputs = new ArrayList<>()
+        ExecutorServicesHelper executorServicesHelper = new ExecutorServicesHelper(project, "dexMerge",
+                inputDexList.size() > 8 ? 8
+                        : inputDexList.size());
+
+        List<Runnable> runnableArrayList = new ArrayList<>()
+        for (int i = 0; i <= inputDexList.size() - 1; i++) {
+            final File dexFile = new File(tmpDir, "classes${i + 2}.dex")
+            GFileUtils.deleteQuietly(dexFile)
+            GFileUtils.touch(dexFile)
+            Dex[] dexes = (Dex[]) inputDexList.get(i)
+
+            runnableArrayList.add(new InformationRunnable() {
+                void printInformation(String name, int index, int total, long time) {
+                    project.logger.lifecycle("Finished to execute ${name} task at ${index}/${total} which spend ${time} ms to ${dexFile}")
+                }
+
+                @Override
+                void run() {
+                    try {
+                        Dex merged = new DexMerger(dexes, CollisionPolicy.KEEP_FIRST, new DxContext()).merge()
+                        merged.writeTo(dexFile)
+                    } catch (Exception e) {
+                        throw new GradleException(e.getMessage(), e)
+                    }
+                }
+            })
+
+            outputs.add(dexFile)
         }
         executorServicesHelper.execute(runnableArrayList)
         return outputs
