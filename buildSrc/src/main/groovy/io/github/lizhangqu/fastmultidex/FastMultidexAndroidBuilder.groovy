@@ -295,7 +295,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
 
         List<File> result = new ArrayList<>()
-        File mainDexJar = new File(repackageDir, "rmainDex.jar")
+        File mainDexJar = new File(repackageDir, "mainDex.jar")
         GFileUtils.deleteQuietly(mainDexJar)
         GFileUtils.touch(mainDexJar)
         JarOutputStream mainDexJarOutputStream = new JarOutputStream(
