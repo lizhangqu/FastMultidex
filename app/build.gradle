@@ -8,6 +8,8 @@ fastMultidex {
     maxMethodNumber = 50000
     maxFieldNumber = 50000
     enableNetworkCache = true
+    enableNetworkCacheUpload = false
+    enableNetworkCacheDownload = true
 }
 
 android {

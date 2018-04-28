@@ -6,7 +6,9 @@ public class CacheManager {
 
     private volatile static CacheManager sInstance;
     private final Cache localCache = new SimpleLocalCache()
-    Cache networkCache = null
+    private Cache networkCache = null
+    private boolean networkCacheUploadEnabled = false
+    private boolean networkCacheDownloadEnabled = false
 
     private CacheManager() {
     }
@@ -25,26 +27,34 @@ public class CacheManager {
         return sInstance;
     }
 
-    void setNetworkCache(Cache cache) {
+    public void setNetworkCache(Cache cache) {
         networkCache = cache
     }
 
-    void putFile(Project project, String type, String key, File srcFile) {
+    public void setNetworkCacheUploadEnabled(boolean enabled) {
+        networkCacheUploadEnabled = enabled
+    }
+
+    public void setNetworkCacheDownloadEnabled(boolean enabled) {
+        networkCacheDownloadEnabled = enabled
+    }
+
+    public void putFile(Project project, String type, String key, File srcFile) {
         if (localCache != null) {
             localCache.putFile(type, key, srcFile)
         }
 
-        if (networkCache != null) {
+        if (networkCache != nul && networkCacheUploadEnabled) {
             networkCache.putFile(type, key, srcFile)
         }
     }
 
-    void fetchFile(Project project, String type, String key, File destFile) {
+    public void fetchFile(Project project, String type, String key, File destFile) {
         if (localCache != null) {
             localCache.fetchFile(type, key, destFile)
         }
 
-        if (!destFile.exists() && networkCache != null) {
+        if (!destFile.exists() && networkCache != null && networkCacheDownloadEnabled) {
             networkCache.fetchFile(type, key, destFile)
 
             if (destFile.exists() && destFile.length() > 0) {
@@ -55,7 +65,7 @@ public class CacheManager {
         }
     }
 
-    void clearAll() {
+    public void clearAll() {
         if (localCache != null) {
             localCache.clearAll()
         }
@@ -65,14 +75,14 @@ public class CacheManager {
         }
     }
 
-    void clearLocal() {
+    public void clearLocal() {
         if (localCache != null) {
             localCache.clearAll()
         }
 
     }
 
-    void clearNetwork() {
+    public void clearNetwork() {
         if (networkCache != null) {
             networkCache.clearAll()
         }

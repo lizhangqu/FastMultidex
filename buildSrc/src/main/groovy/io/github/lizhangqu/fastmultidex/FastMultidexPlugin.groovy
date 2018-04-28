@@ -92,10 +92,13 @@ class FastMultidexPlugin implements Plugin<Project> {
                 FastMultidexExtension fastMultidexExtension = project.getExtensions().getByType(FastMultidexExtension.class)
                 if (fastMultidexExtension != null && fastMultidexExtension.enableNetworkCache) {
                     CacheManager.getInstance().setNetworkCache(new MavenCache(project))
+                    CacheManager.getInstance().setNetworkCacheUploadEnabled(fastMultidexExtension.enableNetworkCacheUpload)
+                    CacheManager.getInstance().setNetworkCacheDownloadEnabled(fastMultidexExtension.enableNetworkCacheDownload)
                 } else {
                     CacheManager.getInstance().setNetworkCache(null)
                 }
-                
+
+
                 AppExtension appExtension = project.getExtensions().findByType(AppExtension.class)
                 appExtension.applicationVariants.all { def variant ->
                     //get ApplicationVariantData and GradleVariantConfiguration

@@ -9,4 +9,6 @@ class FastMultidexExtension {
     boolean dexMerge = true
 
     boolean enableNetworkCache = false
+    boolean enableNetworkCacheUpload = false
+    boolean enableNetworkCacheDownload = true
 }
