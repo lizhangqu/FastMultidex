@@ -7,4 +7,6 @@ class FastMultidexExtension {
     int maxMethodNumber = 50000
     int maxFieldNumber = 50000
     boolean dexMerge = true
+
+    boolean enableNetworkCache = false
 }

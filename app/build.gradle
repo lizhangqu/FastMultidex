@@ -5,6 +5,9 @@ fastMultidex {
     mainDexMaxNumber = 1000
     jarMergeMaxNumber = 50
     dexMerge = true
+    maxMethodNumber = 50000
+    maxFieldNumber = 50000
+    enableNetworkCache = true
 }
 
 android {

@@ -18,10 +18,12 @@ import com.android.ide.common.process.JavaProcessExecutor
 import com.android.ide.common.process.ProcessExecutor
 import com.android.utils.ILogger
 import io.github.lizhangqu.fastmultidex.cache.CacheManager
+import io.github.lizhangqu.fastmultidex.cache.MavenCache
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskCollection
+
 
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
@@ -85,6 +87,15 @@ class FastMultidexPlugin implements Plugin<Project> {
                     CacheManager.getInstance().clearNetwork()
                 }
             }
+
+            FastMultidexExtension fastMultidexExtension = project.getExtensions().getByType(FastMultidexExtension.class)
+
+            if (fastMultidexExtension != null && fastMultidexExtension.enableNetworkCache) {
+                CacheManager.getInstance().setNetworkCache(new MavenCache(project))
+            } else {
+                CacheManager.getInstance().setNetworkCache(null)
+            }
+
             project.afterEvaluate {
                 AppExtension appExtension = project.getExtensions().findByType(AppExtension.class)
                 appExtension.applicationVariants.all { def variant ->
