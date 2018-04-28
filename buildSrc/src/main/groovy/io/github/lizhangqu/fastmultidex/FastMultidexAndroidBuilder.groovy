@@ -182,7 +182,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
             md5 = getMD5(md5 + dexOptions.getJumboMode() + dexOptions.getKeepRuntimeAnnotatedClasses() + getTargetInfo().getBuildTools().getRevision())
 
             if (md5 != null && md5.length() > 0) {
-                CacheManager.fetchFile(CACHE_TYPE_PRE_DEX, md5, dexFile)
+                CacheManager.fetchFile(project, CACHE_TYPE_PRE_DEX, md5, dexFile)
             }
 
             if (dexFile.exists() && dexFile.length() > 0) {
@@ -194,7 +194,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         super.preDexLibrary(inputFile, outFile, multiDex, dexOptions, processOutputHandler)
 
         if (md5 != null && md5.length() > 0 && dexFile.exists()) {
-            CacheManager.putFile(CACHE_TYPE_PRE_DEX, md5, dexFile)
+            CacheManager.putFile(project, CACHE_TYPE_PRE_DEX, md5, dexFile)
             project.logger.lifecycle("put cache to ${dexFile} for ${inputFile}")
         }
 
