@@ -20,6 +20,7 @@ import org.eclipse.aether.resolution.ArtifactResolutionException
 import org.eclipse.aether.resolution.ArtifactResult
 import org.eclipse.aether.resolution.VersionRangeRequest
 import org.eclipse.aether.resolution.VersionRequest
+import org.eclipse.aether.resolution.VersionResult
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory
 import org.eclipse.aether.spi.connector.transport.TransporterFactory
 import org.eclipse.aether.transfer.ArtifactNotFoundException
@@ -184,9 +185,9 @@ class Resolver {
             rangeRequest.setArtifact(artifact)
             rangeRequest.addRepository(resolverRepository)
 
-            Version resolvedVersion = repositorySystem.resolveVersion(session, rangeRequest)
+            VersionResult versionResult = repositorySystem.resolveVersion(session, rangeRequest)
 
-            if (resolvedVersion != null) {
+            if (versionResult != null && versionResult.version != null) {
                 return true
             }
         } catch (ArtifactResolutionException e) {
