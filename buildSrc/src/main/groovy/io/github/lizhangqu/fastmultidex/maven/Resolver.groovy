@@ -187,13 +187,22 @@ class Resolver {
 
             VersionResult versionResult = repositorySystem.resolveVersion(session, rangeRequest)
 
-            if (versionResult != null && versionResult.version != null) {
-                return true
+            if (versionResult == null) {
+                return false
             }
-        } catch (ArtifactResolutionException e) {
 
-        } catch (ArtifactNotFoundException e) {
+            if (versionResult.getVersion() == null) {
+                return false
+            }
 
+            if (versionResult.getRepository() == null) {
+                return false
+            }
+
+            if (versionResult.getExceptions() != null && versionResult.getExceptions().size() > 0) {
+                return false
+            }
+            return true
         } catch (Exception e) {
             e.printStackTrace()
         }
