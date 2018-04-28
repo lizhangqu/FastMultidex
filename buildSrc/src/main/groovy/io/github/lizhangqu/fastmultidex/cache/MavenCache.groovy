@@ -60,8 +60,13 @@ class MavenCache implements Cache {
         String version = getVersion(key)
 
         Artifact artifact = resolver.resolve(group, artifactId, version)
+        if (artifact == null) {
+            return
+        }
         File cacheFile = artifact.getFile()
-
+        if (cacheFile == null) {
+            return
+        }
         if (cacheFile.isFile()) {
             GFileUtils.touch(destFile)
             GFileUtils.copyFile(cacheFile, destFile)
