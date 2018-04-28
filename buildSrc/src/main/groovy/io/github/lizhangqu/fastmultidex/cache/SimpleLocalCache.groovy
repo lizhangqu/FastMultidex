@@ -56,14 +56,13 @@ class SimpleLocalCache implements Cache {
         if (cacheFile.isFile()) {
             GFileUtils.touch(destFile)
             GFileUtils.copyFile(cacheFile, destFile)
+            return true
         } else {
             GFileUtils.mkdirs(destFile)
             GFileUtils.copyDirectory(cacheFile, destFile)
+            return true
         }
-    }
 
-    void clear(String type) {
-        GFileUtils.deleteQuietly(new File(cacheRootDir, type))
     }
 
     void clearAll() {

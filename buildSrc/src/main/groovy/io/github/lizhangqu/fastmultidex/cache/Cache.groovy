@@ -6,8 +6,6 @@ interface Cache {
 
     boolean fetchFile(String type, String key, File destFile)
 
-    void clear(String type)
-
     void clearAll()
 
 }

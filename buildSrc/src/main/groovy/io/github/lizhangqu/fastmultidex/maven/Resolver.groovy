@@ -67,6 +67,10 @@ class Resolver {
         this(project, true)
     }
 
+    public File getBaseDir() {
+        return localRepository.getBasedir()
+    }
+
     private static Properties loadLocalProperties(Project project) {
         Properties properties = new Properties()
         try {
