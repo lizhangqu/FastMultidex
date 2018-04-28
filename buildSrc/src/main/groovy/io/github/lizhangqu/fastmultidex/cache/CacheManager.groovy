@@ -4,10 +4,10 @@ import org.gradle.api.Project
 
 class CacheManager {
     private static final Cache localCache = new SimpleLocalCache()
-    static Cache netCache = null
+    static Cache networkCache = null
 
-    static void setNetCache(Cache cache) {
-        netCache = cache
+    static void setNetworkCache(Cache cache) {
+        networkCache = cache
     }
 
     static void putFile(Project project, String type, String key, File srcFile) {
@@ -15,9 +15,8 @@ class CacheManager {
             localCache.putFile(type, key, srcFile)
         }
 
-
-        if (netCache != null) {
-            netCache.putFile(type, key, srcFile)
+        if (networkCache != null) {
+            networkCache.putFile(type, key, srcFile)
         }
     }
 
@@ -26,8 +25,14 @@ class CacheManager {
             localCache.fetchFile(type, key, destFile)
         }
 
-        if (!destFile.exists() && netCache != null) {
-            netCache.fetchFile(type, key, destFile)
+        if (!destFile.exists() && networkCache != null) {
+            networkCache.fetchFile(type, key, destFile)
+
+            if (destFile.exists() && destFile.length() > 0) {
+                if (localCache != null) {
+                    localCache.putFile(type, key, destFile)
+                }
+            }
         }
     }
 
@@ -36,9 +41,23 @@ class CacheManager {
             localCache.clearAll()
         }
 
-        if (netCache != null) {
-            netCache.clearAll()
+        if (networkCache != null) {
+            networkCache.clearAll()
         }
+    }
+
+    static void clearLocal(Project project) {
+        if (localCache != null) {
+            localCache.clearAll()
+        }
+
+    }
+
+    static void clearNetwork(Project project) {
+        if (networkCache != null) {
+            networkCache.clearAll()
+        }
+
     }
 
 }
