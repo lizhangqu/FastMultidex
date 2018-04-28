@@ -94,6 +94,7 @@ class FastMultidexPlugin implements Plugin<Project> {
                     CacheManager.getInstance().setNetworkCache(new MavenCache(project))
                     CacheManager.getInstance().setNetworkCacheUploadEnabled(fastMultidexExtension.enableNetworkCacheUpload)
                     CacheManager.getInstance().setNetworkCacheDownloadEnabled(fastMultidexExtension.enableNetworkCacheDownload)
+                    CacheManager.getInstance().clearNetwork()
                 } else {
                     CacheManager.getInstance().setNetworkCache(null)
                 }
