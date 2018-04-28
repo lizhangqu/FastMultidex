@@ -6,8 +6,8 @@ class CacheManager {
     private static final Cache localCache = new SimpleLocalCache()
     static Cache netCache = null
 
-    static void setNetCache(Cache netCache) {
-        CacheManager.netCache = netCache
+    static void setNetCache(Cache cache) {
+        netCache = cache
     }
 
     static void putFile(Project project, String type, String key, File srcFile) {
