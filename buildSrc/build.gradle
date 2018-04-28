@@ -33,6 +33,23 @@ dependencies {
     compile 'org.javassist:javassist:3.22.0-GA'
     compile "commons-io:commons-io:2.6"
 
+    //maven
+    compile 'org.apache.maven.resolver:maven-resolver-api:1.1.1'
+    compile 'org.apache.maven.resolver:maven-resolver-util:1.1.1'
+    compile 'org.apache.maven.resolver:maven-resolver-spi:1.1.1'
+    compile 'org.apache.maven.resolver:maven-resolver-impl:1.1.1'
+    compile 'org.apache.maven:maven-resolver-provider:3.5.3'
+    compile 'org.apache.maven.resolver:maven-resolver-connector-basic:1.1.1'
+    compile 'org.apache.maven.resolver:maven-resolver-transport-wagon:1.1.1'
+    compile 'org.apache.maven.resolver:maven-resolver-transport-http:1.1.1'
+    compile 'org.apache.maven.resolver:maven-resolver-transport-file:1.1.1'
+    compile 'org.apache.maven.resolver:maven-resolver-transport-classpath:1.1.1'
+    //aether
+    compile 'org.eclipse.aether:aether-api:1.1.0'
+    compile 'org.eclipse.aether:aether-util:1.1.0'
+    compile 'org.eclipse.aether:aether-impl:1.1.0'
+    compile 'org.eclipse.aether:aether-spi:1.1.0'
+    compile 'org.eclipse.aether:aether-spi:1.1.0'
 }
 
 buildscript {
