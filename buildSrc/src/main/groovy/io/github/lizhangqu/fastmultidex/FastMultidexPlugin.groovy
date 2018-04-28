@@ -73,6 +73,18 @@ class FastMultidexPlugin implements Plugin<Project> {
                     CacheManager.clearAll()
                 }
             }
+            project.task("cleanFastMultidexLocalCache") {
+                setGroup("build")
+                doLast {
+                    CacheManager.clearLocal()
+                }
+            }
+            project.task("cleanFastMultidexNetworkCache") {
+                setGroup("build")
+                doLast {
+                    CacheManager.clearNetwork()
+                }
+            }
             project.afterEvaluate {
                 AppExtension appExtension = project.getExtensions().findByType(AppExtension.class)
                 appExtension.applicationVariants.all { def variant ->
