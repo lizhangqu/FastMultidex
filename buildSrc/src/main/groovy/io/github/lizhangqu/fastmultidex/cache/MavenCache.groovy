@@ -47,6 +47,7 @@ class MavenCache implements Cache {
         boolean exist = resolver.exist(group, artifactId, version)
         if (!exist) {
             resolver.install(group, artifactId, version, srcFile)
+            resolver.deploy(group, artifactId, version, srcFile)
         }
         return true
     }
