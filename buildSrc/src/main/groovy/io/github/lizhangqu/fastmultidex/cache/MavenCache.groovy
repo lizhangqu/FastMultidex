@@ -44,7 +44,10 @@ class MavenCache implements Cache {
         String artifactId = getArtifactId(type)
         String version = getVersion(key)
 
-        resolver.install(group, artifactId, version)
+        boolean exist = resolver.exist(group, artifactId, version)
+        if (!exist) {
+            resolver.install(group, artifactId, version, srcFile)
+        }
         return true
     }
 
@@ -59,13 +62,17 @@ class MavenCache implements Cache {
         String artifactId = getArtifactId(type)
         String version = getVersion(key)
 
+        boolean exist = resolver.exist(group, artifactId, version)
+        if (!exist) {
+            return false
+        }
         Artifact artifact = resolver.resolve(group, artifactId, version)
         if (artifact == null) {
-            return
+            return false
         }
         File cacheFile = artifact.getFile()
         if (cacheFile == null) {
-            return
+            return false
         }
         if (cacheFile.isFile()) {
             GFileUtils.touch(destFile)

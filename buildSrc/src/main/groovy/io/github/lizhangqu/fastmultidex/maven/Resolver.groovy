@@ -8,6 +8,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.deployment.DeployRequest
+import org.eclipse.aether.deployment.DeploymentException
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.installation.InstallRequest;
 import org.eclipse.aether.installation.InstallationException;
@@ -15,12 +16,17 @@ import org.eclipse.aether.repository.Authentication;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.RemoteRepository
 import org.eclipse.aether.resolution.ArtifactRequest
+import org.eclipse.aether.resolution.ArtifactResolutionException
 import org.eclipse.aether.resolution.ArtifactResult
+import org.eclipse.aether.resolution.VersionRangeRequest
+import org.eclipse.aether.resolution.VersionRequest
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory
 import org.eclipse.aether.spi.connector.transport.TransporterFactory
+import org.eclipse.aether.transfer.ArtifactNotFoundException
 import org.eclipse.aether.transport.file.FileTransporterFactory
 import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.eclipse.aether.util.repository.AuthenticationBuilder
+import org.eclipse.aether.version.Version
 import org.gradle.api.GradleException
 import org.gradle.api.Project;
 
@@ -167,6 +173,30 @@ class Resolver {
         return session
     }
 
+    boolean exist(String groupId, String artifactId, String version) {
+        try {
+            RepositorySystemSession session = newRepositorySystemSession()
+            Artifact artifact = new DefaultArtifact(groupId, artifactId, "jar", version)
+
+            VersionRequest rangeRequest = new VersionRequest()
+            rangeRequest.setArtifact(artifact)
+            rangeRequest.addRepository(resolverRepository)
+
+            Version resolvedVersion = repositorySystem.resolveVersion(session, rangeRequest)
+
+            if (resolvedVersion != null) {
+                return true
+            }
+        } catch (ArtifactResolutionException e) {
+
+        } catch (ArtifactNotFoundException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace()
+        }
+        return false
+    }
+
     Artifact resolve(String groupId, String artifactId, String version) {
         try {
             RepositorySystemSession session = newRepositorySystemSession()
@@ -180,6 +210,10 @@ class Resolver {
 
             artifact = artifactResult.getArtifact()
             return artifact
+        } catch (ArtifactResolutionException e) {
+
+        } catch (ArtifactNotFoundException e) {
+
         } catch (Exception e) {
             e.printStackTrace()
         }
@@ -196,6 +230,8 @@ class Resolver {
             InstallRequest installRequest = new InstallRequest()
             installRequest.addArtifact(jarArtifact)
             repositorySystem.install(session, installRequest)
+        } catch (InstallationException e) {
+
         } catch (Exception e) {
             e.printStackTrace()
         }
@@ -214,6 +250,8 @@ class Resolver {
             deployRequest.setRepository(uploadRepository)
 
             repositorySystem.deploy(session, deployRequest)
+        } catch (DeploymentException e) {
+
         } catch (Exception e) {
             e.printStackTrace()
         }
