@@ -38,6 +38,8 @@ class Resolver {
     private LocalRepository localRepository
     private RepositorySystem repositorySystem
 
+    private static final String extension = "dex"
+
 
     Resolver(Project project, RemoteRepository resolverRepository, RemoteRepository uploadRepository, LocalRepository localRepository) {
         this.project = project
@@ -176,7 +178,7 @@ class Resolver {
     boolean exist(String groupId, String artifactId, String version) {
         try {
             RepositorySystemSession session = newRepositorySystemSession()
-            Artifact artifact = new DefaultArtifact(groupId, artifactId, "jar", version)
+            Artifact artifact = new DefaultArtifact(groupId, artifactId, extension, version)
 
             VersionRequest rangeRequest = new VersionRequest()
             rangeRequest.setArtifact(artifact)
@@ -200,7 +202,7 @@ class Resolver {
     Artifact resolve(String groupId, String artifactId, String version) {
         try {
             RepositorySystemSession session = newRepositorySystemSession()
-            Artifact artifact = new DefaultArtifact(groupId, artifactId, "jar", version)
+            Artifact artifact = new DefaultArtifact(groupId, artifactId, extension, version)
 
             ArtifactRequest artifactRequest = new ArtifactRequest()
             artifactRequest.setArtifact(artifact)
@@ -224,7 +226,7 @@ class Resolver {
         try {
             RepositorySystemSession session = newRepositorySystemSession();
 
-            Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, "jar", version)
+            Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, extension, version)
             jarArtifact = jarArtifact.setFile(srcFile)
 
             InstallRequest installRequest = new InstallRequest()
@@ -242,7 +244,7 @@ class Resolver {
         try {
             RepositorySystemSession session = newRepositorySystemSession();
 
-            Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, "jar", version)
+            Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, extension, version)
             jarArtifact = jarArtifact.setFile(srcFile)
 
             DeployRequest deployRequest = new DeployRequest()
