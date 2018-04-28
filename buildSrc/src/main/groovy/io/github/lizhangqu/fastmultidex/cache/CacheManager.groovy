@@ -2,15 +2,34 @@ package io.github.lizhangqu.fastmultidex.cache
 
 import org.gradle.api.Project
 
-class CacheManager {
-    private static final Cache localCache = new SimpleLocalCache()
-    static Cache networkCache = null
+public class CacheManager {
 
-    static void setNetworkCache(Cache cache) {
+    private volatile static CacheManager sInstance;
+    private final Cache localCache = new SimpleLocalCache()
+    Cache networkCache = null
+
+    private CacheManager() {
+    }
+
+    public static CacheManager getInstance() {
+        if (sInstance != null) {
+            return sInstance;
+        }
+        if (null == sInstance) {
+            synchronized (CacheManager.class) {
+                if (null == sInstance) {
+                    sInstance = new CacheManager();
+                }
+            }
+        }
+        return sInstance;
+    }
+
+    void setNetworkCache(Cache cache) {
         networkCache = cache
     }
 
-    static void putFile(Project project, String type, String key, File srcFile) {
+    void putFile(Project project, String type, String key, File srcFile) {
         if (localCache != null) {
             localCache.putFile(type, key, srcFile)
         }
@@ -20,7 +39,7 @@ class CacheManager {
         }
     }
 
-    static void fetchFile(Project project, String type, String key, File destFile) {
+    void fetchFile(Project project, String type, String key, File destFile) {
         if (localCache != null) {
             localCache.fetchFile(type, key, destFile)
         }
@@ -36,7 +55,7 @@ class CacheManager {
         }
     }
 
-    static void clearAll(Project project) {
+    void clearAll() {
         if (localCache != null) {
             localCache.clearAll()
         }
@@ -46,14 +65,14 @@ class CacheManager {
         }
     }
 
-    static void clearLocal(Project project) {
+    void clearLocal() {
         if (localCache != null) {
             localCache.clearAll()
         }
 
     }
 
-    static void clearNetwork(Project project) {
+    void clearNetwork() {
         if (networkCache != null) {
             networkCache.clearAll()
         }

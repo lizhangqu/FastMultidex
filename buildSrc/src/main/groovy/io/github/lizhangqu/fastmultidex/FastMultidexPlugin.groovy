@@ -70,19 +70,19 @@ class FastMultidexPlugin implements Plugin<Project> {
             project.task("cleanFastMultidexCache") {
                 setGroup("build")
                 doLast {
-                    CacheManager.clearAll()
+                    CacheManager.getInstance().clearAll()
                 }
             }
             project.task("cleanFastMultidexLocalCache") {
                 setGroup("build")
                 doLast {
-                    CacheManager.clearLocal()
+                    CacheManager.getInstance().clearLocal()
                 }
             }
             project.task("cleanFastMultidexNetworkCache") {
                 setGroup("build")
                 doLast {
-                    CacheManager.clearNetwork()
+                    CacheManager.getInstance().clearNetwork()
                 }
             }
             project.afterEvaluate {
