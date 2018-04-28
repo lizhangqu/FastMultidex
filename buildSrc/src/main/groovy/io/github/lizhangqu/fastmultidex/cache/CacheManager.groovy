@@ -44,7 +44,7 @@ public class CacheManager {
             localCache.putFile(type, key, srcFile)
         }
 
-        if (networkCache != nul && networkCacheUploadEnabled) {
+        if (networkCache != null && networkCacheUploadEnabled) {
             networkCache.putFile(type, key, srcFile)
         }
     }
