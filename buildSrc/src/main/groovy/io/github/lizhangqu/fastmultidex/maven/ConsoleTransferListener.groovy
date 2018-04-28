@@ -30,13 +30,13 @@ class ConsoleTransferListener
 
     void println(String msg) {
         if (logger != null) {
-            logger.lifecycle(msg)
+            logger.info(msg)
         }
     }
 
     void println(Throwable throwable) {
         if (logger != null) {
-            logger.lifecycle("", throwable)
+            logger.info("", throwable)
         }
     }
 

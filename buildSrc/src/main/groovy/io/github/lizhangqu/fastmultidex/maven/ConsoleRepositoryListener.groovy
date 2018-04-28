@@ -18,7 +18,7 @@ class ConsoleRepositoryListener
 
     void println(String msg) {
         if (logger != null) {
-            logger.lifecycle(msg)
+            logger.info(msg)
         }
     }
 
