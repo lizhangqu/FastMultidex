@@ -49,7 +49,7 @@ class SimpleLocalCache implements Cache {
             return false
         }
         File cacheFile = getLocalCacheFile(type, key)
-        if (!cacheFile.exists()) {
+        if (!cacheFile.exists() || cacheFile.length() == 0) {
             return false
         }
 

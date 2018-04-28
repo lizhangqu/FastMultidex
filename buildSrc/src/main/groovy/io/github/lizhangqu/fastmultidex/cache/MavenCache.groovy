@@ -72,7 +72,7 @@ class MavenCache implements Cache {
             return false
         }
         File cacheFile = artifact.getFile()
-        if (cacheFile == null) {
+        if (cacheFile == null || cacheFile.length() == 0) {
             return false
         }
         if (cacheFile.isFile()) {
