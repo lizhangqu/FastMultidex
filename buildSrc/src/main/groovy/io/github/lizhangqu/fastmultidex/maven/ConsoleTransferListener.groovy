@@ -43,7 +43,7 @@ class ConsoleTransferListener
     @Override
     void transferInitiated(TransferEvent event) {
         String message = event.getRequestType() == TransferEvent.RequestType.PUT ? "Uploading" : "Downloading"
-        out.println(message + ": " + event.getResource().getRepositoryUrl() + event.getResource().getResourceName())
+        println(message + ": " + event.getResource().getRepositoryUrl() + event.getResource().getResourceName())
     }
 
     @Override
@@ -60,9 +60,9 @@ class ConsoleTransferListener
             buffer.append(getStatus(complete, total)).append("  ")
         }
 
-        int pad = lastLength - buffer.length()
+        pad(buffer, lastLength - buffer.length())
         lastLength = buffer.length()
-        pad(buffer, pad)
+
         buffer.append('\r')
 
         println(buffer.toString())
