@@ -40,6 +40,7 @@ class Resolver {
     private RepositorySystem repositorySystem
 
     private static final String extension = "dex"
+    private static final String id = "nexus"
 
 
     Resolver(Project project, RemoteRepository resolverRepository, RemoteRepository uploadRepository, LocalRepository localRepository) {
@@ -141,14 +142,14 @@ class Resolver {
     }
 
     private static RemoteRepository newResolverRepository(String url) {
-        return new RemoteRepository.Builder("nexus", "default", url).build()
+        return new RemoteRepository.Builder(id, "default", url).build()
     }
 
     private
     static RemoteRepository newUploadRepository(String url, String username, String password) {
         Authentication authentication = new AuthenticationBuilder().addUsername(username).addPassword(password).build()
         RemoteRepository nexus =
-                new RemoteRepository.Builder("nexus", "default", url).setAuthentication(authentication).build()
+                new RemoteRepository.Builder(id, "default", url).setAuthentication(authentication).build()
         return nexus
     }
 
@@ -199,7 +200,7 @@ class Resolver {
                 return false
             }
 
-            if ("nexus".equalsIgnoreCase(versionResult.getRepository().getId())) {
+            if (id.equalsIgnoreCase(versionResult.getRepository().getId())) {
                 return true
             }
 
