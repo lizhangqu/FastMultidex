@@ -18,16 +18,12 @@ import org.eclipse.aether.repository.RemoteRepository
 import org.eclipse.aether.resolution.ArtifactRequest
 import org.eclipse.aether.resolution.ArtifactResolutionException
 import org.eclipse.aether.resolution.ArtifactResult
-import org.eclipse.aether.resolution.VersionRangeRequest
-import org.eclipse.aether.resolution.VersionRequest
-import org.eclipse.aether.resolution.VersionResult
 import org.eclipse.aether.spi.connector.RepositoryConnectorFactory
 import org.eclipse.aether.spi.connector.transport.TransporterFactory
 import org.eclipse.aether.transfer.ArtifactNotFoundException
 import org.eclipse.aether.transport.file.FileTransporterFactory
 import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.eclipse.aether.util.repository.AuthenticationBuilder
-import org.eclipse.aether.version.Version
 import org.gradle.api.GradleException
 import org.gradle.api.Project;
 
@@ -35,31 +31,38 @@ import org.gradle.api.Project;
 class Resolver {
     private Project project
     private RemoteRepository resolverRepository
-    private RemoteRepository uploadRepository
-    private LocalRepository localRepository
+    private RemoteRepository uploadRemoteRepository
+    private LocalRepository downloadLocalRepository
+    private LocalRepository uploadLocalRepository
     private RepositorySystem repositorySystem
-    private DefaultRepositorySystemSession repositorySystemSession
+    private DefaultRepositorySystemSession downloadRepositorySystemSession
+    private DefaultRepositorySystemSession uploadRepositorySystemSession
 
     private static final String extension = "dex"
     private static final String id = "nexus"
 
 
-    Resolver(Project project, RemoteRepository resolverRepository, RemoteRepository uploadRepository, LocalRepository localRepository) {
+    Resolver(Project project, RemoteRepository resolverRepository, RemoteRepository uploadRemoteRepository, LocalRepository downloadLocalRepository, LocalRepository uploadLocalRepository) {
         this.project = project
         this.resolverRepository = resolverRepository
-        this.uploadRepository = uploadRepository
-        this.localRepository = localRepository
+        this.uploadRemoteRepository = uploadRemoteRepository
+        this.uploadLocalRepository = uploadLocalRepository
+        this.downloadLocalRepository = downloadLocalRepository
         this.repositorySystem = newRepositorySystem()
-        this.repositorySystemSession = newRepositorySystemSession()
+        this.uploadRepositorySystemSession = newRepositorySystemSession(uploadLocalRepository)
+        this.downloadRepositorySystemSession = newRepositorySystemSession(downloadLocalRepository)
+
     }
 
-    Resolver(Project project, String resolverUrl, File baseDir, String uploadUrl, String username, String password) {
+    Resolver(Project project, String resolverUrl, File uploadBaseDir, File downloadBaseDir, String uploadUrl, String username, String password) {
         this.project = project
         this.resolverRepository = newResolverRepository(resolverUrl)
-        this.uploadRepository = newUploadRepository(uploadUrl, username, password)
-        this.localRepository = newLocalRepository(baseDir)
+        this.uploadRemoteRepository = newRemoteRepository(uploadUrl, username, password)
+        this.uploadLocalRepository = newLocalRepository(uploadBaseDir)
+        this.downloadLocalRepository = newLocalRepository(downloadBaseDir)
         this.repositorySystem = newRepositorySystem()
-        this.repositorySystemSession = newRepositorySystemSession()
+        this.uploadRepositorySystemSession = newRepositorySystemSession(uploadLocalRepository)
+        this.downloadRepositorySystemSession = newRepositorySystemSession(downloadLocalRepository)
     }
 
 
@@ -68,13 +71,15 @@ class Resolver {
         Properties properties = loadLocalProperties(project)
         this.resolverRepository = newResolverRepository(getRepositoryUrl(project, properties))
         if (snapshot) {
-            this.uploadRepository = newUploadRepository(getSnapshotRepositoryUrl(project, properties), getSnapshotRepositoryUsername(project, properties), getSnapshotRepositoryPassword(project, properties))
+            this.uploadRemoteRepository = newRemoteRepository(getSnapshotRepositoryUrl(project, properties), getSnapshotRepositoryUsername(project, properties), getSnapshotRepositoryPassword(project, properties))
         } else {
-            this.uploadRepository = newUploadRepository(getReleaseRepositoryUrl(project, properties), getReleaseRepositoryUsername(project, properties), getReleaseRepositoryPassword(project, properties))
+            this.uploadRemoteRepository = newRemoteRepository(getReleaseRepositoryUrl(project, properties), getReleaseRepositoryUsername(project, properties), getReleaseRepositoryPassword(project, properties))
         }
-        this.localRepository = newLocalRepository(new File(System.getProperty("user.home"), ".fastmultidex/.m2"))
+        this.uploadLocalRepository = newLocalRepository(new File(System.getProperty("user.home"), ".fastmultidex/.m2/upload"))
+        this.downloadLocalRepository = newLocalRepository(new File(System.getProperty("user.home"), ".fastmultidex/.m2/download"))
         this.repositorySystem = newRepositorySystem()
-        this.repositorySystemSession = newRepositorySystemSession()
+        this.uploadRepositorySystemSession = newRepositorySystemSession(uploadLocalRepository)
+        this.downloadRepositorySystemSession = newRepositorySystemSession(downloadLocalRepository)
     }
 
     Resolver(Project project) {
@@ -82,7 +87,7 @@ class Resolver {
     }
 
     public File getBaseDir() {
-        return localRepository.getBasedir()
+        return downloadLocalRepository.getBasedir()
     }
 
     private static Properties loadLocalProperties(Project project) {
@@ -150,7 +155,7 @@ class Resolver {
     }
 
     private
-    static RemoteRepository newUploadRepository(String url, String username, String password) {
+    static RemoteRepository newRemoteRepository(String url, String username, String password) {
         Authentication authentication = new AuthenticationBuilder().addUsername(username).addPassword(password).build()
         RemoteRepository nexus =
                 new RemoteRepository.Builder(id, "default", url).setAuthentication(authentication).build()
@@ -173,7 +178,7 @@ class Resolver {
         return locator.getService(RepositorySystem.class)
     }
 
-    private DefaultRepositorySystemSession newRepositorySystemSession() {
+    private DefaultRepositorySystemSession newRepositorySystemSession(LocalRepository localRepository) {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession()
         session.setLocalRepositoryManager(repositorySystem.newLocalRepositoryManager(session, localRepository))
         session.setTransferListener(new ConsoleTransferListener(project))
@@ -181,46 +186,9 @@ class Resolver {
         return session
     }
 
-    boolean exist(String groupId, String artifactId, String version) {
-        try {
-            RepositorySystemSession session = repositorySystemSession
-            Artifact artifact = new DefaultArtifact(groupId, artifactId, extension, version)
-
-            VersionRequest rangeRequest = new VersionRequest()
-            rangeRequest.setArtifact(artifact)
-            rangeRequest.addRepository(resolverRepository)
-
-            VersionResult versionResult = repositorySystem.resolveVersion(session, rangeRequest)
-
-            if (versionResult == null) {
-                return false
-            }
-
-            if (versionResult.getVersion() == null) {
-                return false
-            }
-
-            if (versionResult.getRepository() == null) {
-                return false
-            }
-
-            if (id.equalsIgnoreCase(versionResult.getRepository().getId())) {
-                return true
-            }
-
-            if (versionResult.getExceptions() != null && versionResult.getExceptions().size() > 0) {
-                return false
-            }
-            return true
-        } catch (Exception e) {
-            e.printStackTrace()
-        }
-        return false
-    }
-
     Artifact resolve(String groupId, String artifactId, String version) {
         try {
-            RepositorySystemSession session = repositorySystemSession
+            RepositorySystemSession session = downloadRepositorySystemSession
             Artifact artifact = new DefaultArtifact(groupId, artifactId, extension, version)
 
             ArtifactRequest artifactRequest = new ArtifactRequest()
@@ -243,7 +211,7 @@ class Resolver {
     void install(String groupId, String artifactId, String version, File srcFile)
             throws InstallationException {
         try {
-            RepositorySystemSession session = repositorySystemSession
+            RepositorySystemSession session = uploadRepositorySystemSession
 
             Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, extension, version)
             jarArtifact = jarArtifact.setFile(srcFile)
@@ -261,14 +229,14 @@ class Resolver {
 
     void deploy(String groupId, String artifactId, String version, File srcFile) {
         try {
-            RepositorySystemSession session = repositorySystemSession
+            RepositorySystemSession session = uploadRepositorySystemSession
 
             Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, extension, version)
             jarArtifact = jarArtifact.setFile(srcFile)
 
             DeployRequest deployRequest = new DeployRequest()
             deployRequest.addArtifact(jarArtifact)
-            deployRequest.setRepository(uploadRepository)
+            deployRequest.setRepository(uploadRemoteRepository)
 
             repositorySystem.deploy(session, deployRequest)
         } catch (DeploymentException e) {
