@@ -44,7 +44,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
 
     private JavaProcessExecutor javaProcessExecutor
 
-    public static final String CACHE_TYPE_PRE_DEX = "pre-dex-1.0.0"
+    public static final String CACHE_TYPE_PRE_DEX = "pre-dex-1.1.0"
 
     private int mainDexMaxNumber
     private int jarMergeMaxNumber

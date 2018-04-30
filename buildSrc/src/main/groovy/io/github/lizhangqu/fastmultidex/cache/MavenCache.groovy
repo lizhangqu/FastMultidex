@@ -83,8 +83,9 @@ class MavenCache implements Cache {
     }
 
     void clearAll() {
-        File baseDir = resolver.getBaseDir()
-        GFileUtils.deleteQuietly(baseDir)
+        GFileUtils.deleteQuietly(resolver.getResolveBaseDir())
+        GFileUtils.deleteQuietly(resolver.getInstallBaseDir())
+        GFileUtils.deleteQuietly(resolver.getDeployBaseDir())
     }
 
 }
