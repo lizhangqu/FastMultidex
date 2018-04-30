@@ -9,10 +9,12 @@ class MavenCache implements Cache {
 
     private static final String GROUP = "com.vdian.android.lib.fastmultidex"
 
-    Resolver resolver = new Resolver(project)
+    private Resolver resolver = new Resolver(project)
+    private Project project
 
     MavenCache(Project project) {
-        resolver = new Resolver(project)
+        this.project = project
+        this.resolver = new Resolver(project)
     }
 
     static String getGroup() {
@@ -44,11 +46,6 @@ class MavenCache implements Cache {
         String artifactId = getArtifactId(type)
         String version = getVersion(key)
 
-        boolean exist = resolver.exist(group, artifactId, version)
-        if (!exist) {
-            resolver.install(group, artifactId, version, srcFile)
-            resolver.deploy(group, artifactId, version, srcFile)
-        }
         return true
     }
 
@@ -63,10 +60,6 @@ class MavenCache implements Cache {
         String artifactId = getArtifactId(type)
         String version = getVersion(key)
 
-        boolean exist = resolver.exist(group, artifactId, version)
-        if (!exist) {
-            return false
-        }
         Artifact artifact = resolver.resolve(group, artifactId, version)
         if (artifact == null) {
             return false
