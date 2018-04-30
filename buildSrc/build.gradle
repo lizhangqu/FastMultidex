@@ -30,7 +30,8 @@ dependencies {
 
     compile "com.android.tools.build:gradle:${androidGradlePluginVersion}"
 
-    compile 'org.javassist:javassist:3.22.0-GA'
+    //javassist版本不要往上升，会造成java8不支持
+    compile 'org.javassist:javassist:3.20.0-GA'
     compile "commons-io:commons-io:2.6"
 
     //maven
