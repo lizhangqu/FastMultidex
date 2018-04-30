@@ -103,8 +103,16 @@ class Resolver {
         this(project, true)
     }
 
-    public File getBaseDir() {
+    public File getResolveBaseDir() {
         return resolveLocalRepository.getBasedir()
+    }
+
+    public File getInstallBaseDir() {
+        return installLocalRepository.getBasedir()
+    }
+
+    public File getDeployBaseDir() {
+        return deployLocalRepository.getBasedir()
     }
 
     private static Properties loadLocalProperties(Project project) {
