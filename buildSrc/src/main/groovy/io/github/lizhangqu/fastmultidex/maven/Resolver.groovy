@@ -55,9 +55,9 @@ class Resolver {
 
         this.repositorySystem = newRepositorySystem()
 
-        this.resolveRepositorySystemSession = newRepositorySystemSession(resolveLocalRepository)
-        this.installRepositorySystemSession = newRepositorySystemSession(installLocalRepository)
-        this.deployRepositorySystemSession = newRepositorySystemSession(deployLocalRepository)
+        this.resolveRepositorySystemSession = newRepositorySystemSession(project, repositorySystem, resolveLocalRepository)
+        this.installRepositorySystemSession = newRepositorySystemSession(project, repositorySystem, installLocalRepository)
+        this.deployRepositorySystemSession = newRepositorySystemSession(project, repositorySystem, deployLocalRepository)
 
     }
 
@@ -72,9 +72,9 @@ class Resolver {
 
         this.repositorySystem = newRepositorySystem()
 
-        this.resolveRepositorySystemSession = newRepositorySystemSession(resolveLocalRepository)
-        this.installRepositorySystemSession = newRepositorySystemSession(installLocalRepository)
-        this.deployRepositorySystemSession = newRepositorySystemSession(deployLocalRepository)
+        this.resolveRepositorySystemSession = newRepositorySystemSession(project, repositorySystem, resolveLocalRepository)
+        this.installRepositorySystemSession = newRepositorySystemSession(project, repositorySystem, installLocalRepository)
+        this.deployRepositorySystemSession = newRepositorySystemSession(project, repositorySystem, deployLocalRepository)
     }
 
 
@@ -94,9 +94,9 @@ class Resolver {
 
         this.repositorySystem = newRepositorySystem()
 
-        this.resolveRepositorySystemSession = newRepositorySystemSession(resolveLocalRepository)
-        this.installRepositorySystemSession = newRepositorySystemSession(installLocalRepository)
-        this.deployRepositorySystemSession = newRepositorySystemSession(deployLocalRepository)
+        this.resolveRepositorySystemSession = newRepositorySystemSession(project, repositorySystem, resolveLocalRepository)
+        this.installRepositorySystemSession = newRepositorySystemSession(project, repositorySystem, installLocalRepository)
+        this.deployRepositorySystemSession = newRepositorySystemSession(project, repositorySystem, deployLocalRepository)
     }
 
     Resolver(Project project) {
@@ -195,7 +195,7 @@ class Resolver {
         return locator.getService(RepositorySystem.class)
     }
 
-    private DefaultRepositorySystemSession newRepositorySystemSession(LocalRepository localRepository) {
+    private DefaultRepositorySystemSession newRepositorySystemSession(Project project, RepositorySystem repositorySystem, LocalRepository localRepository) {
         DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession()
         session.setLocalRepositoryManager(repositorySystem.newLocalRepositoryManager(session, localRepository))
         session.setTransferListener(new ConsoleTransferListener(project))
