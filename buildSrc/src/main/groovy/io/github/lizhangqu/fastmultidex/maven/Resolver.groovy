@@ -199,6 +199,10 @@ class Resolver {
                 return false
             }
 
+            if ("nexus".equalsIgnoreCase(versionResult.getRepository().getId())) {
+                return true
+            }
+
             if (versionResult.getExceptions() != null && versionResult.getExceptions().size() > 0) {
                 return false
             }
