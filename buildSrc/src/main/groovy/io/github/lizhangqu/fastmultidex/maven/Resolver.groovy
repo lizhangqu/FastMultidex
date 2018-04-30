@@ -38,6 +38,7 @@ class Resolver {
     private RemoteRepository uploadRepository
     private LocalRepository localRepository
     private RepositorySystem repositorySystem
+    private DefaultRepositorySystemSession repositorySystemSession
 
     private static final String extension = "dex"
     private static final String id = "nexus"
@@ -49,6 +50,7 @@ class Resolver {
         this.uploadRepository = uploadRepository
         this.localRepository = localRepository
         this.repositorySystem = newRepositorySystem()
+        this.repositorySystemSession = newRepositorySystemSession()
     }
 
     Resolver(Project project, String resolverUrl, File baseDir, String uploadUrl, String username, String password) {
@@ -57,6 +59,7 @@ class Resolver {
         this.uploadRepository = newUploadRepository(uploadUrl, username, password)
         this.localRepository = newLocalRepository(baseDir)
         this.repositorySystem = newRepositorySystem()
+        this.repositorySystemSession = newRepositorySystemSession()
     }
 
 
@@ -71,6 +74,7 @@ class Resolver {
         }
         this.localRepository = newLocalRepository(new File(System.getProperty("user.home"), ".fastmultidex/.m2"))
         this.repositorySystem = newRepositorySystem()
+        this.repositorySystemSession = newRepositorySystemSession()
     }
 
     Resolver(Project project) {
@@ -179,7 +183,7 @@ class Resolver {
 
     boolean exist(String groupId, String artifactId, String version) {
         try {
-            RepositorySystemSession session = newRepositorySystemSession()
+            RepositorySystemSession session = repositorySystemSession
             Artifact artifact = new DefaultArtifact(groupId, artifactId, extension, version)
 
             VersionRequest rangeRequest = new VersionRequest()
@@ -216,7 +220,7 @@ class Resolver {
 
     Artifact resolve(String groupId, String artifactId, String version) {
         try {
-            RepositorySystemSession session = newRepositorySystemSession()
+            RepositorySystemSession session = repositorySystemSession
             Artifact artifact = new DefaultArtifact(groupId, artifactId, extension, version)
 
             ArtifactRequest artifactRequest = new ArtifactRequest()
@@ -239,7 +243,7 @@ class Resolver {
     void install(String groupId, String artifactId, String version, File srcFile)
             throws InstallationException {
         try {
-            RepositorySystemSession session = newRepositorySystemSession();
+            RepositorySystemSession session = repositorySystemSession
 
             Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, extension, version)
             jarArtifact = jarArtifact.setFile(srcFile)
@@ -257,7 +261,7 @@ class Resolver {
 
     void deploy(String groupId, String artifactId, String version, File srcFile) {
         try {
-            RepositorySystemSession session = newRepositorySystemSession();
+            RepositorySystemSession session = repositorySystemSession
 
             Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, extension, version)
             jarArtifact = jarArtifact.setFile(srcFile)
