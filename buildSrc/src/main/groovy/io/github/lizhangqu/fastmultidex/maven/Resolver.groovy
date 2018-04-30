@@ -30,56 +30,73 @@ import org.gradle.api.Project;
 
 class Resolver {
     private Project project
-    private RemoteRepository resolverRepository
-    private RemoteRepository uploadRemoteRepository
-    private LocalRepository downloadLocalRepository
-    private LocalRepository uploadLocalRepository
+    private RemoteRepository resolveRemoteRepository
+    private RemoteRepository deployRemoteRepository
+    private LocalRepository resolveLocalRepository
+    private LocalRepository installLocalRepository
+    private LocalRepository deployLocalRepository
     private RepositorySystem repositorySystem
-    private DefaultRepositorySystemSession downloadRepositorySystemSession
-    private DefaultRepositorySystemSession uploadRepositorySystemSession
+    private DefaultRepositorySystemSession installRepositorySystemSession
+    private DefaultRepositorySystemSession resolveRepositorySystemSession
+    private DefaultRepositorySystemSession deployRepositorySystemSession
 
     private static final String extension = "dex"
     private static final String id = "nexus"
 
 
-    Resolver(Project project, RemoteRepository resolverRepository, RemoteRepository uploadRemoteRepository, LocalRepository downloadLocalRepository, LocalRepository uploadLocalRepository) {
+    Resolver(Project project, RemoteRepository resolveRemoteRepository, RemoteRepository deployRemoteRepository, LocalRepository resolveLocalRepository, LocalRepository installLocalRepository, LocalRepository deployLocalRepository) {
         this.project = project
-        this.resolverRepository = resolverRepository
-        this.uploadRemoteRepository = uploadRemoteRepository
-        this.uploadLocalRepository = uploadLocalRepository
-        this.downloadLocalRepository = downloadLocalRepository
+        this.resolveRemoteRepository = resolveRemoteRepository
+        this.deployRemoteRepository = deployRemoteRepository
+
+        this.resolveLocalRepository = resolveLocalRepository
+        this.installLocalRepository = installLocalRepository
+        this.deployLocalRepository = deployLocalRepository
+
         this.repositorySystem = newRepositorySystem()
-        this.uploadRepositorySystemSession = newRepositorySystemSession(uploadLocalRepository)
-        this.downloadRepositorySystemSession = newRepositorySystemSession(downloadLocalRepository)
+
+        this.resolveRepositorySystemSession = newRepositorySystemSession(resolveLocalRepository)
+        this.installRepositorySystemSession = newRepositorySystemSession(installLocalRepository)
+        this.deployRepositorySystemSession = newRepositorySystemSession(deployLocalRepository)
 
     }
 
-    Resolver(Project project, String resolverUrl, File uploadBaseDir, File downloadBaseDir, String uploadUrl, String username, String password) {
+    Resolver(Project project, String resolverUrl, File resolveBaseDir, File installBaseDir, File deployBaseDir, String uploadUrl, String username, String password) {
         this.project = project
-        this.resolverRepository = newResolverRepository(resolverUrl)
-        this.uploadRemoteRepository = newRemoteRepository(uploadUrl, username, password)
-        this.uploadLocalRepository = newLocalRepository(uploadBaseDir)
-        this.downloadLocalRepository = newLocalRepository(downloadBaseDir)
+        this.resolveRemoteRepository = newResolverRepository(resolverUrl)
+        this.deployRemoteRepository = newRemoteRepository(uploadUrl, username, password)
+
+        this.resolveLocalRepository = newLocalRepository(resolveBaseDir)
+        this.installLocalRepository = newLocalRepository(installBaseDir)
+        this.deployLocalRepository = newLocalRepository(deployBaseDir)
+
         this.repositorySystem = newRepositorySystem()
-        this.uploadRepositorySystemSession = newRepositorySystemSession(uploadLocalRepository)
-        this.downloadRepositorySystemSession = newRepositorySystemSession(downloadLocalRepository)
+
+        this.resolveRepositorySystemSession = newRepositorySystemSession(resolveLocalRepository)
+        this.installRepositorySystemSession = newRepositorySystemSession(installLocalRepository)
+        this.deployRepositorySystemSession = newRepositorySystemSession(deployLocalRepository)
     }
 
 
     Resolver(Project project, boolean snapshot) {
         this.project = project
         Properties properties = loadLocalProperties(project)
-        this.resolverRepository = newResolverRepository(getRepositoryUrl(project, properties))
+        this.resolveRemoteRepository = newResolverRepository(getRepositoryUrl(project, properties))
         if (snapshot) {
-            this.uploadRemoteRepository = newRemoteRepository(getSnapshotRepositoryUrl(project, properties), getSnapshotRepositoryUsername(project, properties), getSnapshotRepositoryPassword(project, properties))
+            this.deployRemoteRepository = newRemoteRepository(getSnapshotRepositoryUrl(project, properties), getSnapshotRepositoryUsername(project, properties), getSnapshotRepositoryPassword(project, properties))
         } else {
-            this.uploadRemoteRepository = newRemoteRepository(getReleaseRepositoryUrl(project, properties), getReleaseRepositoryUsername(project, properties), getReleaseRepositoryPassword(project, properties))
+            this.deployRemoteRepository = newRemoteRepository(getReleaseRepositoryUrl(project, properties), getReleaseRepositoryUsername(project, properties), getReleaseRepositoryPassword(project, properties))
         }
-        this.uploadLocalRepository = newLocalRepository(new File(System.getProperty("user.home"), ".fastmultidex/.m2/upload"))
-        this.downloadLocalRepository = newLocalRepository(new File(System.getProperty("user.home"), ".fastmultidex/.m2/download"))
+
+        this.resolveLocalRepository = newLocalRepository(new File(System.getProperty("user.home"), ".fastmultidex/.m2/resolve"))
+        this.installLocalRepository = newLocalRepository(new File(System.getProperty("user.home"), ".fastmultidex/.m2/install"))
+        this.deployLocalRepository = newLocalRepository(new File(System.getProperty("user.home"), ".fastmultidex/.m2/deploy"))
+
         this.repositorySystem = newRepositorySystem()
-        this.uploadRepositorySystemSession = newRepositorySystemSession(uploadLocalRepository)
-        this.downloadRepositorySystemSession = newRepositorySystemSession(downloadLocalRepository)
+
+        this.resolveRepositorySystemSession = newRepositorySystemSession(resolveLocalRepository)
+        this.installRepositorySystemSession = newRepositorySystemSession(installLocalRepository)
+        this.deployRepositorySystemSession = newRepositorySystemSession(deployLocalRepository)
     }
 
     Resolver(Project project) {
@@ -87,7 +104,7 @@ class Resolver {
     }
 
     public File getBaseDir() {
-        return downloadLocalRepository.getBasedir()
+        return resolveLocalRepository.getBasedir()
     }
 
     private static Properties loadLocalProperties(Project project) {
@@ -188,14 +205,13 @@ class Resolver {
 
     Artifact resolve(String groupId, String artifactId, String version) {
         try {
-            RepositorySystemSession session = downloadRepositorySystemSession
             Artifact artifact = new DefaultArtifact(groupId, artifactId, extension, version)
 
             ArtifactRequest artifactRequest = new ArtifactRequest()
             artifactRequest.setArtifact(artifact)
-            artifactRequest.addRepository(resolverRepository)
+            artifactRequest.addRepository(resolveRemoteRepository)
 
-            ArtifactResult artifactResult = repositorySystem.resolveArtifact(session, artifactRequest)
+            ArtifactResult artifactResult = repositorySystem.resolveArtifact(resolveRepositorySystemSession, artifactRequest)
 
             artifact = artifactResult.getArtifact()
             return artifact
@@ -211,14 +227,12 @@ class Resolver {
     void install(String groupId, String artifactId, String version, File srcFile)
             throws InstallationException {
         try {
-            RepositorySystemSession session = uploadRepositorySystemSession
-
             Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, extension, version)
             jarArtifact = jarArtifact.setFile(srcFile)
 
             InstallRequest installRequest = new InstallRequest()
             installRequest.addArtifact(jarArtifact)
-            repositorySystem.install(session, installRequest)
+            repositorySystem.install(installRepositorySystemSession, installRequest)
         } catch (InstallationException e) {
 
         } catch (Exception e) {
@@ -229,16 +243,14 @@ class Resolver {
 
     void deploy(String groupId, String artifactId, String version, File srcFile) {
         try {
-            RepositorySystemSession session = uploadRepositorySystemSession
-
             Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, extension, version)
             jarArtifact = jarArtifact.setFile(srcFile)
 
             DeployRequest deployRequest = new DeployRequest()
             deployRequest.addArtifact(jarArtifact)
-            deployRequest.setRepository(uploadRemoteRepository)
+            deployRequest.setRepository(deployRemoteRepository)
 
-            repositorySystem.deploy(session, deployRequest)
+            repositorySystem.deploy(deployRepositorySystemSession, deployRequest)
         } catch (DeploymentException e) {
 
         } catch (Exception e) {
