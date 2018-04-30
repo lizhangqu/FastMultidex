@@ -46,6 +46,9 @@ class MavenCache implements Cache {
         String artifactId = getArtifactId(type)
         String version = getVersion(key)
 
+        resolver.install(group, artifactId, version, srcFile)
+        resolver.deploy(group, artifactId, version, srcFile)
+
         return true
     }
 

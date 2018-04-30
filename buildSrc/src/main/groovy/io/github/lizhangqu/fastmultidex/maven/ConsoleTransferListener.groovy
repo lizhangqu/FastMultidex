@@ -48,24 +48,24 @@ class ConsoleTransferListener
 
     @Override
     void transferProgressed(TransferEvent event) {
-        TransferResource resource = event.getResource()
-        downloads.put(resource, Long.valueOf(event.getTransferredBytes()))
-
-        StringBuilder buffer = new StringBuilder(64)
-
-        for (Map.Entry<TransferResource, Long> entry : downloads.entrySet()) {
-            long total = entry.getKey().getContentLength()
-            long complete = entry.getValue().longValue()
-
-            buffer.append(getStatus(complete, total)).append("  ")
-        }
-
-        pad(buffer, lastLength - buffer.length())
-        lastLength = buffer.length()
-
-        buffer.append('\r')
-
-        println(buffer.toString())
+//        TransferResource resource = event.getResource()
+//        downloads.put(resource, Long.valueOf(event.getTransferredBytes()))
+//
+//        StringBuilder buffer = new StringBuilder(64)
+//
+//        for (Map.Entry<TransferResource, Long> entry : downloads.entrySet()) {
+//            long total = entry.getKey().getContentLength()
+//            long complete = entry.getValue().longValue()
+//
+//            buffer.append(getStatus(complete, total)).append("  ")
+//        }
+//
+//        pad(buffer, lastLength - buffer.length())
+//        lastLength = buffer.length()
+//
+//        buffer.append('\r')
+//
+//        println(buffer.toString())
     }
 
     private String getStatus(long complete, long total) {
