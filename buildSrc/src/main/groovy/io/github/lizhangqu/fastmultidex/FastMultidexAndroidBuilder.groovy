@@ -199,7 +199,7 @@ class FastMultidexAndroidBuilder extends AndroidBuilder {
         }
 
         if (!dexFile.exists()) {
-            project.logger.lifecycle("not exist ${outFile}, maybe it has been extra to mainDex")
+            project.logger.lifecycle("not exist cache ${md5} for ${inputFile} to ${outFile}, maybe it has been extra to mainDex and the key may be the same because it's empty")
         }
     }
 
