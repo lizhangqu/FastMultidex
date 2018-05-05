@@ -21,6 +21,7 @@ buildscript {
         project.logger.error "root build.gradle androidGradlePluginVersion ${androidGradlePluginVersion}"
 
         classpath "com.android.tools.build:gradle:${androidGradlePluginVersion}"
+        classpath 'io.github.lizhangqu:core-publish:1.2.9'
     }
     configurations.all {
         it.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')

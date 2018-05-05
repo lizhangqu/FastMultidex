@@ -65,3 +65,7 @@ buildscript {
     }
 }
 
+apply plugin: 'core.publish'
+pom {
+    exclude "com.android.tools.build:gradle"
+}
