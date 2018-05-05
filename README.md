@@ -2,17 +2,39 @@
 
 #### 使用
 
-仅debug构建启用，使用前请禁用multidex，具体配置如下
+添加依赖
 
 ```
-android{
-    defaultConfig {
-        multiDexEnabled true
+buildscript {
+    repositories {
+        jcenter()
     }
-    
+    dependencies {
+        classpath 'io.github.lizhangqu:plugin-fast-multidex:1.0.0'
+    }
+}
+```
+
+应用插件及配置
+
+```
+apply plugin: 'fast-multidex'
+
+fastMultidex {
+    mainDexMaxNumber = 1000 //主dex最大的类个数
+    jarMergeMaxNumber = 300 //folder下的classes进行合并时，每个jar最多多少个class
+    dexMerge = true //是否进行dex合并
+    maxMethodNumber = 50000//second dex中最大的方法个数
+    maxFieldNumber = 50000//second dex中最大的字段个数
+    enableNetworkCache = false //是否启用网络二级缓存
+    enableNetworkCacheUpload = false//网络缓存开启的情况下是否上传
+    enableNetworkCacheDownload = false//网络缓存开启的情况下是否下载
+}
+
+android {
     buildTypes {
         debug {
-            multiDexEnabled false
+            multiDexEnabled !project.getPlugins().hasPlugin("fast-multidex")
         }
     }
 }
