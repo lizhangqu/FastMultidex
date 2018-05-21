@@ -148,27 +148,27 @@ class Resolver {
     }
 
     private static def getReleaseRepositoryUrl(Project project, Properties properties) {
-        return project.hasProperty('RELEASE_REPOSITORY_URL') ? project.ext.RELEASE_REPOSITORY_URL : readPropertyFromLocalProperties(project, properties, 'RELEASE_REPOSITORY_URL', null)
+        return project.hasProperty('RELEASE_REPOSITORY_URL') ? project.ext.RELEASE_REPOSITORY_URL : readPropertyFromLocalProperties(project, properties, 'RELEASE_REPOSITORY_URL', "")
     }
 
     private static def getSnapshotRepositoryUrl(Project project, Properties properties) {
-        return project.hasProperty('SNAPSHOT_REPOSITORY_URL') ? project.ext.SNAPSHOT_REPOSITORY_URL : readPropertyFromLocalProperties(project, properties, 'SNAPSHOT_REPOSITORY_URL', null)
+        return project.hasProperty('SNAPSHOT_REPOSITORY_URL') ? project.ext.SNAPSHOT_REPOSITORY_URL : readPropertyFromLocalProperties(project, properties, 'SNAPSHOT_REPOSITORY_URL', "")
     }
 
     private static def getReleaseRepositoryUsername(Project project, Properties properties) {
-        return project.hasProperty('RELEASE_REPOSITORY_USERNAME') ? project.ext.RELEASE_REPOSITORY_USERNAME : readPropertyFromLocalProperties(project, properties, 'RELEASE_REPOSITORY_USERNAME', null)
+        return project.hasProperty('RELEASE_REPOSITORY_USERNAME') ? project.ext.RELEASE_REPOSITORY_USERNAME : readPropertyFromLocalProperties(project, properties, 'RELEASE_REPOSITORY_USERNAME', "")
     }
 
     private static def getReleaseRepositoryPassword(Project project, Properties properties) {
-        return project.hasProperty('RELEASE_REPOSITORY_PASSWORD') ? project.ext.RELEASE_REPOSITORY_PASSWORD : readPropertyFromLocalProperties(project, properties, 'RELEASE_REPOSITORY_PASSWORD', null)
+        return project.hasProperty('RELEASE_REPOSITORY_PASSWORD') ? project.ext.RELEASE_REPOSITORY_PASSWORD : readPropertyFromLocalProperties(project, properties, 'RELEASE_REPOSITORY_PASSWORD', "")
     }
 
     private static def getSnapshotRepositoryUsername(Project project, Properties properties) {
-        return project.hasProperty('SNAPSHOT_REPOSITORY_USERNAME') ? project.ext.SNAPSHOT_REPOSITORY_USERNAME : readPropertyFromLocalProperties(project, properties, 'SNAPSHOT_REPOSITORY_USERNAME', null)
+        return project.hasProperty('SNAPSHOT_REPOSITORY_USERNAME') ? project.ext.SNAPSHOT_REPOSITORY_USERNAME : readPropertyFromLocalProperties(project, properties, 'SNAPSHOT_REPOSITORY_USERNAME', "")
     }
 
     private static def getSnapshotRepositoryPassword(Project project, Properties properties) {
-        return project.hasProperty('SNAPSHOT_REPOSITORY_PASSWORD') ? project.ext.SNAPSHOT_REPOSITORY_PASSWORD : readPropertyFromLocalProperties(project, properties, 'SNAPSHOT_REPOSITORY_PASSWORD', null)
+        return project.hasProperty('SNAPSHOT_REPOSITORY_PASSWORD') ? project.ext.SNAPSHOT_REPOSITORY_PASSWORD : readPropertyFromLocalProperties(project, properties, 'SNAPSHOT_REPOSITORY_PASSWORD', "")
     }
 
     private static LocalRepository newLocalRepository(File baseDir) {
