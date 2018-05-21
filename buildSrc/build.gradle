@@ -3,6 +3,7 @@ apply plugin: 'java'
 
 repositories {
     maven { url 'https://dl.google.com/dl/android/maven2/' }
+    maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
     mavenLocal()
     jcenter()
 }
@@ -55,10 +56,11 @@ dependencies {
 
 buildscript {
     repositories {
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
         jcenter()
     }
     dependencies {
-        classpath 'io.github.lizhangqu:core-publish:1.2.9'
+        classpath 'io.github.lizhangqu:core-publish:1.3.0'
     }
     configurations.all {
         it.resolutionStrategy.cacheDynamicVersionsFor(5, 'minutes')
