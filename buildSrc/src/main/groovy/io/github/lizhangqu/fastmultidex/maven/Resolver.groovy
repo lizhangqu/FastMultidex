@@ -25,12 +25,12 @@ import org.eclipse.aether.transport.file.FileTransporterFactory
 import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.eclipse.aether.util.repository.AuthenticationBuilder
 import org.gradle.api.GradleException
-import org.gradle.api.Project;
+import org.gradle.api.Project
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository;
 
 
 class Resolver {
     private Project project
-    private RemoteRepository resolveRemoteRepository
     private RemoteRepository deployRemoteRepository
     private LocalRepository resolveLocalRepository
     private LocalRepository installLocalRepository
@@ -44,9 +44,8 @@ class Resolver {
     private static final String id = "nexus"
 
 
-    Resolver(Project project, RemoteRepository resolveRemoteRepository, RemoteRepository deployRemoteRepository, LocalRepository resolveLocalRepository, LocalRepository installLocalRepository, LocalRepository deployLocalRepository) {
+    Resolver(Project project, RemoteRepository deployRemoteRepository, LocalRepository resolveLocalRepository, LocalRepository installLocalRepository, LocalRepository deployLocalRepository) {
         this.project = project
-        this.resolveRemoteRepository = resolveRemoteRepository
         this.deployRemoteRepository = deployRemoteRepository
 
         this.resolveLocalRepository = resolveLocalRepository
@@ -61,9 +60,8 @@ class Resolver {
 
     }
 
-    Resolver(Project project, String resolverUrl, File resolveBaseDir, File installBaseDir, File deployBaseDir, String uploadUrl, String username, String password) {
+    Resolver(Project project, File resolveBaseDir, File installBaseDir, File deployBaseDir, String uploadUrl, String username, String password) {
         this.project = project
-        this.resolveRemoteRepository = newResolverRepository(resolverUrl)
         this.deployRemoteRepository = newRemoteRepository(uploadUrl, username, password)
 
         this.resolveLocalRepository = newLocalRepository(resolveBaseDir)
@@ -81,7 +79,6 @@ class Resolver {
     Resolver(Project project, boolean snapshot) {
         this.project = project
         Properties properties = loadLocalProperties(project)
-        this.resolveRemoteRepository = newResolverRepository(getRepositoryUrl(project, properties))
         if (snapshot) {
             this.deployRemoteRepository = newRemoteRepository(getSnapshotRepositoryUrl(project, properties), getSnapshotRepositoryUsername(project, properties), getSnapshotRepositoryPassword(project, properties))
         } else {
@@ -143,10 +140,6 @@ class Resolver {
         return property
     }
 
-    private static def getRepositoryUrl(Project project, Properties properties) {
-        return project.hasProperty('REPOSITORY_URL') ? project.ext.REPOSITORY_URL : readPropertyFromLocalProperties(project, properties, 'REPOSITORY_URL', null)
-    }
-
     private static def getReleaseRepositoryUrl(Project project, Properties properties) {
         return project.hasProperty('RELEASE_REPOSITORY_URL') ? project.ext.RELEASE_REPOSITORY_URL : readPropertyFromLocalProperties(project, properties, 'RELEASE_REPOSITORY_URL', "")
     }
@@ -175,8 +168,8 @@ class Resolver {
         return new LocalRepository(baseDir);
     }
 
-    private static RemoteRepository newResolverRepository(String url) {
-        return new RemoteRepository.Builder(id, "default", url).build()
+    private static RemoteRepository newResolverRepository(String name, String url) {
+        return new RemoteRepository.Builder(name, "default", url).build()
     }
 
     private
@@ -217,7 +210,12 @@ class Resolver {
 
             ArtifactRequest artifactRequest = new ArtifactRequest()
             artifactRequest.setArtifact(artifact)
-            artifactRequest.addRepository(resolveRemoteRepository)
+
+            project.getRepositories().all { def repository ->
+                if (repository instanceof MavenArtifactRepository) {
+                    artifactRequest.addRepository(newResolverRepository(repository.getName(), repository.getUrl().toString()))
+                }
+            }
 
             ArtifactResult artifactResult = repositorySystem.resolveArtifact(resolveRepositorySystemSession, artifactRequest)
 
@@ -232,7 +230,7 @@ class Resolver {
         }
     }
 
-    void install(String groupId, String artifactId, String version, File srcFile)
+    boolean install(String groupId, String artifactId, String version, File srcFile)
             throws InstallationException {
         try {
             Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, extension, version)
@@ -241,15 +239,16 @@ class Resolver {
             InstallRequest installRequest = new InstallRequest()
             installRequest.addArtifact(jarArtifact)
             repositorySystem.install(installRepositorySystemSession, installRequest)
+            return true
         } catch (InstallationException e) {
 
         } catch (Exception e) {
             e.printStackTrace()
         }
-
+        return false
     }
 
-    void deploy(String groupId, String artifactId, String version, File srcFile) {
+    boolean deploy(String groupId, String artifactId, String version, File srcFile) {
         try {
             Artifact jarArtifact = new DefaultArtifact(groupId, artifactId, extension, version)
             jarArtifact = jarArtifact.setFile(srcFile)
@@ -259,10 +258,12 @@ class Resolver {
             deployRequest.setRepository(deployRemoteRepository)
 
             repositorySystem.deploy(deployRepositorySystemSession, deployRequest)
+            return true
         } catch (DeploymentException e) {
 
         } catch (Exception e) {
             e.printStackTrace()
         }
+        return false
     }
 }
